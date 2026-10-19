@@ -31,7 +31,7 @@ import {
   Info,
 } from 'lucide-react';
 
-export const SimplePipelinePage: React.FC = () => {
+export const StudentWorkspacePage: React.FC = () => {
   const { currentUser, switchUserRoleForTesting } = useAuth();
   const navigate = useNavigate();
 

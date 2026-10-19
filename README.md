@@ -255,7 +255,7 @@ The compiled production bundle is generated in `dist/`.
 
 ## 11. Privacy Policy Review Checklist
 
-Before opening the portal to students, the MUJ Legal & Registrar team should review `/privacy-policy`:
+Before opening the portal to students, the MUJ Legal & Registrar team should review institutional privacy guidelines:
 - [ ] Confirm official institutional email address for patent queries (`patent.admin@jaipur.manipal.edu`).
 - [ ] Validate data retention schedule for approved disclosures (recommended: 7 years).
 - [ ] Confirm retention and cleanup policy for abandoned drafts (recommended: 12 months).

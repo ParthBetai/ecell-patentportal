@@ -84,18 +84,18 @@ export const RootLayout: React.FC = () => {
             <nav className="nav-links">
               <Link
                 to="/"
-                className={`nav-item ${location.pathname === '/' || location.pathname === '/pipeline' ? 'active' : ''}`}
+                className={`nav-item ${location.pathname === '/' || location.pathname === '/workspace' ? 'active' : ''}`}
               >
-                Patent Pipeline
+                Patent Workspace
               </Link>
-              {currentUser ? (
+              {currentUser && (
                 <>
                   {currentUser.role === 'admin' ? (
                     <Link
                       to="/admin/dashboard"
                       className={`nav-item ${location.pathname.startsWith('/admin') ? 'active' : ''}`}
                     >
-                      Admin Registry
+                      Admin Dashboard
                     </Link>
                   ) : (
                     <>
@@ -113,21 +113,6 @@ export const RootLayout: React.FC = () => {
                       </Link>
                     </>
                   )}
-                  <Link
-                    to="/privacy-policy"
-                    className={`nav-item ${location.pathname === '/privacy-policy' ? 'active' : ''}`}
-                  >
-                    Privacy Policy
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/privacy-policy"
-                    className={`nav-item ${location.pathname === '/privacy-policy' ? 'active' : ''}`}
-                  >
-                    Privacy Policy
-                  </Link>
                 </>
               )}
             </nav>
@@ -188,10 +173,6 @@ export const RootLayout: React.FC = () => {
               </p>
             </div>
             <div className="footer-links">
-              <Link to="/privacy-policy" style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                Privacy Policy
-              </Link>
-              <span style={{ color: 'var(--border-medium)' }}>|</span>
               <a
                 href="mailto:patent.admin@jaipur.manipal.edu"
                 style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}

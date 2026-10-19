@@ -5,7 +5,7 @@ import { RootLayout } from './layouts/RootLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Pages
-import { SimplePipelinePage } from './pages/SimplePipelinePage';
+import { StudentWorkspacePage } from './pages/StudentWorkspacePage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { StudentDashboard } from './pages/StudentDashboard';
@@ -14,7 +14,6 @@ import { ApplicationDetailPage } from './pages/ApplicationDetailPage';
 import { CorrectionPage } from './pages/CorrectionPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminApplicationReviewPage } from './pages/AdminApplicationReviewPage';
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 
 export const App: React.FC = () => {
   return (
@@ -22,12 +21,11 @@ export const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           <Route element={<RootLayout />}>
-            {/* Primary Interactive Pipeline Portal */}
-            <Route path="/" element={<SimplePipelinePage />} />
-            <Route path="/pipeline" element={<SimplePipelinePage />} />
+            {/* Primary Student Application Workspace */}
+            <Route path="/" element={<StudentWorkspacePage />} />
+            <Route path="/workspace" element={<StudentWorkspacePage />} />
             <Route path="/overview" element={<LandingPage />} />
             <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 
             {/* Authenticated Student Routes */}
             <Route

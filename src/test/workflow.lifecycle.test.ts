@@ -8,12 +8,12 @@ import {
   fetchApplicationById,
 } from '../lib/api';
 
-describe('Exact Correction & Pipeline Workflow Verification', () => {
+describe('Application Workflow & Correction Lifecycle Verification', () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it('progresses through the exact 6-step lifecycle from the pipeline diagram', async () => {
+  it('progresses through the 6-step patent application lifecycle', async () => {
     const student = { id: 'student-test-uuid', role: 'student' as const };
     const admin = { id: 'admin-coordinator-uuid', role: 'admin' as const };
 

@@ -76,9 +76,6 @@ export const LandingPage: React.FC = () => {
                 <ArrowRight size={16} />
               </Link>
             )}
-            <Link to="/privacy-policy" className="btn btn-outline btn-lg">
-              Review Confidentiality Policy
-            </Link>
           </div>
         </div>
       </div>
@@ -180,9 +177,6 @@ export const LandingPage: React.FC = () => {
               Invention disclosures and preliminary patent claims are strictly confidential. Database Row Level Security (RLS) ensures that students can only view and edit their own applications, while administrative oversight is strictly restricted to designated university coordinators.
             </p>
           </div>
-          <Link to="/privacy-policy" className="btn btn-outline btn-sm">
-            Read Policy
-          </Link>
         </div>
       </div>
     </div>
