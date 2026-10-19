@@ -9,7 +9,7 @@ import {
   MAX_DOCUMENT_SIZE_BYTES,
 } from '../lib/api';
 import { canTransition } from '../features/applications/workflow';
-import { isAllowedUniversityEmail } from '../features/auth/AuthContext';
+import { isAllowedUniversityEmail } from '../features/auth/authUtils';
 
 describe('Security & Access Control Tests', () => {
   beforeEach(() => {

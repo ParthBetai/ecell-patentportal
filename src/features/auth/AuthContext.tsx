@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import type { Profile, AppRole } from '../../types/database.types';
 import { fetchCurrentProfile, upsertProfile } from '../../lib/api';
+import { isAllowedUniversityEmail } from './authUtils';
 
 interface AuthContextType {
   currentUser: Profile | null;
@@ -14,14 +15,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_AUTH_USER_KEY = 'muj_patent_auth_user';
-
-export const ALLOWED_EMAIL_DOMAIN = '@muj.manipal.edu';
-
-export function isAllowedUniversityEmail(email: string): boolean {
-  if (!email) return false;
-  const normalized = email.trim().toLowerCase();
-  return normalized.endsWith(ALLOWED_EMAIL_DOMAIN);
-}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
