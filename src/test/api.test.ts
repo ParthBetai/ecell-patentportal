@@ -72,9 +72,9 @@ describe('Data Access Layer & Workflow Logic', () => {
     await expect(fetchApplicationById(draft.id, studentB)).rejects.toThrow('Access denied');
   });
 
-  it('allows admin (Dorelal Ji) to review and request corrections', async () => {
+  it('allows admin (Patent Coordinator) to review and request corrections', async () => {
     const student = { id: 'student-C', role: 'student' as const };
-    const admin = { id: 'admin-dorelal-uuid', role: 'admin' as const };
+    const admin = { id: 'admin-coordinator-uuid', role: 'admin' as const };
 
     const draft = await saveDraftApplication({ title: 'Application for Review' }, [], student.id);
     await submitApplication(draft.id, student.id);

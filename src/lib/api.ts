@@ -30,14 +30,14 @@ export const ALLOWED_DOCUMENT_MIMES = [
   'image/jpeg',
 ];
 
-// Seed initial profile for Dorelal Ji and a sample student for immediate interactive verification
+// Seed initial profile for Patent Coordinator and a sample student for immediate interactive verification
 function initLocalStorageIfNeeded() {
   const initialized = localStorage.getItem(`${STORAGE_PREFIX}initialized`);
   if (!initialized) {
     const adminUser: Profile = {
-      id: 'admin-dorelal-uuid',
-      university_email: 'dorelal@jaipur.manipal.edu',
-      full_name: 'Dorelal Ji',
+      id: 'admin-coordinator-uuid',
+      university_email: 'patent.admin@jaipur.manipal.edu',
+      full_name: 'Patent Coordinator',
       role: 'admin',
       department: 'Office of Dean Research / IPR Cell',
       registration_number: 'MUJ-FAC-IPR-001',
@@ -249,7 +249,7 @@ export async function upsertProfile(profile: Partial<Profile> & { id: string; un
     profiles[index] = updatedProfile;
   } else {
     // Determine default role: if matches designated admin email, grant admin
-    const isAdminEmail = profile.university_email.toLowerCase() === 'dorelal@jaipur.manipal.edu';
+    const isAdminEmail = profile.university_email.toLowerCase() === 'patent.admin@jaipur.manipal.edu';
     updatedProfile = {
       id: profile.id,
       university_email: profile.university_email,
@@ -643,7 +643,7 @@ export async function resubmitApplication(
     submission_notes: notes || `Resubmitted as Version ${newVersion} with corrections.`,
   });
 
-  // Notification for Dorelal Ji (admin)
+  // Notification for Patent Coordinator (admin)
   const profiles = getLocalItem<Profile[]>('profiles', []);
   const adminProfile = profiles.find((p) => p.role === 'admin');
   const notifications = getLocalItem<InPortalNotification[]>('notifications', []);
@@ -888,6 +888,17 @@ export async function getDocumentSignedUrl(documentPath: string): Promise<string
 
   // Local fallback: create safe mock preview link
   return `data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og...`;
+}
+
+export const getSignedDocumentUrl = getDocumentSignedUrl;
+
+export async function deleteDocument(documentId: string, _userId?: string): Promise<void> {
+  if (isSupabaseConfigured()) {
+    await supabase.from('application_documents').delete().eq('id', documentId);
+    return;
+  }
+  const documents = getLocalItem<ApplicationDocument[]>('documents', []);
+  setLocalItem('documents', documents.filter((d) => d.id !== documentId));
 }
 
 // =============================================================================

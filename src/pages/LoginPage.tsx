@@ -35,7 +35,7 @@ export const LoginPage: React.FC = () => {
     } else {
       setSuccessNotice('Authentication verified. Redirecting to your dashboard...');
       setTimeout(() => {
-        const destination = email.toLowerCase() === 'dorelal@jaipur.manipal.edu' ? '/admin/dashboard' : '/dashboard';
+        const destination = email.toLowerCase() === 'patent.admin@jaipur.manipal.edu' ? '/admin/dashboard' : '/dashboard';
         navigate(destination);
       }, 600);
     }
@@ -51,7 +51,7 @@ export const LoginPage: React.FC = () => {
     if (result.error) {
       setErrorMessage(result.error);
     } else {
-      const destination = targetEmail.toLowerCase() === 'dorelal@jaipur.manipal.edu' ? '/admin/dashboard' : '/dashboard';
+      const destination = targetEmail.toLowerCase() === 'patent.admin@jaipur.manipal.edu' ? '/admin/dashboard' : '/dashboard';
       navigate(destination);
     }
   };
@@ -132,7 +132,7 @@ export const LoginPage: React.FC = () => {
               marginBottom: '20px',
             }}
           >
-            <strong>Role Provisioning Notice:</strong> Administrator privileges are strictly reserved for the university patent coordinator (Dorelal Ji) through server-side authorization. Public administrator sign-up is disabled.
+            <strong>Role Provisioning Notice:</strong> Administrator privileges are strictly reserved for the university patent coordinator through server-side authorization. Public administrator sign-up is disabled.
           </div>
 
           {/* Quick Testing Sign-In Panel */}
@@ -151,7 +151,7 @@ export const LoginPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickLogin('dorelal@jaipur.manipal.edu')}
+                onClick={() => handleQuickLogin('patent.admin@jaipur.manipal.edu')}
                 className="btn btn-outline btn-sm"
                 style={{ flex: 1, borderColor: 'var(--accent-teal)', color: 'var(--accent-teal)' }}
               >

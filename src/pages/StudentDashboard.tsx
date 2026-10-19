@@ -169,7 +169,7 @@ export const StudentDashboard: React.FC = () => {
                               }}
                             >
                               <AlertTriangle size={12} />
-                              Reviewer corrections requested by Dorelal Ji
+                              Reviewer corrections requested by Patent Review Cell
                             </div>
                           )}
                         </td>

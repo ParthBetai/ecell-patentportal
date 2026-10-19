@@ -36,7 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
           </div>
           <div className="card-body">
             <p style={{ marginBottom: '16px' }}>
-              Access to the administrative patent screening console is restricted to the designated university patent coordinator (Dorelal Ji).
+              Access to the administrative patent screening console is restricted to the designated university patent coordinator / administrator.
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
               Current signed-in account: <strong>{currentUser.university_email}</strong> ({currentUser.role}).

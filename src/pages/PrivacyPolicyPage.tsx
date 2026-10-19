@@ -49,7 +49,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               2. Purpose of Collection
             </h2>
             <p>
-              Information is collected solely to enable the designated university patent coordinator (Dorelal Ji) and the Directorate of Research & Innovation to evaluate disclosure novelty, assess patentability, guide applicants through necessary corrections, and authorize internal university support for statutory filing with the Indian Patent Office (IPO). Data is never sold, leased, or utilized for commercial marketing.
+              Information is collected solely to enable the designated university patent coordinator / Patent Review Cell and the Directorate of Research & Innovation to evaluate disclosure novelty, assess patentability, guide applicants through necessary corrections, and authorize internal university support for statutory filing with the Indian Patent Office (IPO). Data is never sold, leased, or utilized for commercial marketing.
             </p>
           </section>
 
@@ -77,7 +77,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             </p>
             <ul style={{ paddingLeft: '20px', marginTop: '8px', fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
               <li><strong>Student Applicants:</strong> May view, edit, and access only applications where they are the verified owner. Students cannot access another applicant's disclosures or files.</li>
-              <li><strong>University Patent Coordinator:</strong> Dorelal Ji holds designated administrative access to view submitted applications across departments, author correction requests, and update internal approval stages.</li>
+              <li><strong>University Patent Coordinator:</strong> Designated patent administrators hold authorized access to view submitted applications across departments, author correction requests, and update internal approval stages.</li>
               <li><strong>Server-Enforced Privileges:</strong> Administrative roles are provisioned through trusted backend database routines. No client-side modification of roles is permitted.</li>
             </ul>
           </section>
@@ -132,10 +132,10 @@ export const PrivacyPolicyPage: React.FC = () => {
                 fontSize: '0.875rem',
               }}
             >
-              <div><strong>Designated Patent Coordinator:</strong> Dorelal Ji</div>
+              <div><strong>Designated Authority:</strong> Patent Review Cell / IPR Office</div>
               <div><strong>Office:</strong> Directorate of Research & Innovation / IPR Cell</div>
               <div><strong>Address:</strong> Manipal University Jaipur, Dehmi Kalan, Jaipur-Ajmer Expressway, Rajasthan 303007</div>
-              <div><strong>Official Email:</strong> <code>[CONFIRMED CONTACT: dorelal@jaipur.manipal.edu]</code></div>
+              <div><strong>Official Email:</strong> <code>[CONFIRMED CONTACT: patent.admin@jaipur.manipal.edu]</code></div>
               <div><strong>Privacy Escalation Contact:</strong> <code>[PENDING UNIVERSITY CONFIRMATION: registrar@jaipur.manipal.edu]</code></div>
             </div>
           </section>

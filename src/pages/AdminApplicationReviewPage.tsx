@@ -93,7 +93,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
         application.id,
         'under_review',
         currentUser,
-        'Coordinator Dorelal Ji commenced active screening.'
+        'Patent Review Cell commenced active screening.'
       );
       setApplication(updated);
       setFeedbackMessage({
@@ -117,12 +117,18 @@ export const AdminApplicationReviewPage: React.FC = () => {
   };
 
   const handleSendCorrectionRequests = async () => {
-    if (!application || !currentUser || correctionsList.length === 0) return;
+    if (!application || !currentUser) return;
+    const itemsToSend = [...correctionsList];
+    if (itemsToSend.length === 0 && correctionComment.trim()) {
+      itemsToSend.push({ field: correctionField, comment: correctionComment.trim() });
+    }
+    if (itemsToSend.length === 0) return;
+
     setIsActionLoading(true);
     setFeedbackMessage(null);
 
     try {
-      for (const item of correctionsList) {
+      for (const item of itemsToSend) {
         await createCorrectionRequest(application.id, currentUser.id, item.comment, item.field);
       }
 
@@ -130,15 +136,16 @@ export const AdminApplicationReviewPage: React.FC = () => {
         application.id,
         'corrections_required',
         currentUser,
-        `Coordinator Dorelal Ji requested ${correctionsList.length} correction(s).`
+        `Patent Review Cell requested ${itemsToSend.length} correction(s).`
       );
 
       setApplication(updated);
       setShowCorrectionModal(false);
       setCorrectionsList([]);
+      setCorrectionComment('');
       setFeedbackMessage({
         type: 'success',
-        text: 'Corrections successfully dispatched to the applicant. In-portal notification delivered.',
+        text: 'Corrections successfully dispatched to the student with note. In-portal notification delivered.',
       });
     } catch (err: unknown) {
       setFeedbackMessage({
@@ -158,7 +165,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
         application.id,
         'approved_next_stage',
         currentUser,
-        approvalNotes.trim() || 'Approved by Coordinator Dorelal Ji for internal filing preparation.'
+        approvalNotes.trim() || 'Approved by Patent Review Cell for internal filing preparation.'
       );
       setApplication(updated);
       setShowApproveModal(false);
@@ -239,21 +246,20 @@ export const AdminApplicationReviewPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Action Controls for Dorelal Ji */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {application.status === 'submitted' && (
-            <button
-              type="button"
-              onClick={handleStartReview}
-              className="btn btn-primary"
-              disabled={isActionLoading}
-            >
-              Start Active Review
-            </button>
-          )}
-
-          {(application.status === 'under_review' || application.status === 'resubmitted') && (
+        {/* Action Controls for Admin */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {(application.status === 'submitted' || application.status === 'under_review' || application.status === 'resubmitted') && (
             <>
+              {application.status === 'submitted' && (
+                <button
+                  type="button"
+                  onClick={handleStartReview}
+                  className="btn btn-outline"
+                  disabled={isActionLoading}
+                >
+                  Mark Under Review
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowCorrectionModal(true)}
@@ -261,7 +267,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 disabled={isActionLoading}
               >
                 <AlertTriangle size={15} />
-                Request Specific Corrections
+                Resend to Student for Corrections
               </button>
               <button
                 type="button"
@@ -270,7 +276,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 disabled={isActionLoading}
               >
                 <CheckCircle2 size={15} />
-                Approve for Next Stage
+                Send for Further Process
               </button>
             </>
           )}
@@ -286,7 +292,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 fontSize: '0.875rem',
               }}
             >
-              <CheckCircle2 size={18} /> Approved by Coordinator
+              <CheckCircle2 size={18} /> Sent for Further Process
             </div>
           )}
         </div>
@@ -568,11 +574,11 @@ export const AdminApplicationReviewPage: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '640px' }}>
             <div className="card-header">
-              <h3 className="card-title">Request Specific Corrections</h3>
+              <h3 className="card-title">Resend to Student for Corrections</h3>
             </div>
             <div className="card-body">
               <p style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-                Itemize specific sections or attachments that require clarification or revision by the applicant.
+                Specify your correction note or itemize sections that require revision by the student.
               </p>
 
               <div
@@ -605,11 +611,11 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Specific Coordinator Feedback</label>
+                  <label className="form-label">Reviewer Note / Required Modifications <span className="required">*</span></label>
                   <textarea
                     className="form-control"
-                    rows={3}
-                    placeholder="Enter precise feedback describing what the student must correct or clarify..."
+                    rows={4}
+                    placeholder="Enter clear instructions and notes describing what the student must correct or clarify..."
                     value={correctionComment}
                     onChange={(e) => setCorrectionComment(e.target.value)}
                   />
@@ -621,7 +627,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
                   className="btn btn-outline btn-sm"
                   disabled={!correctionComment.trim()}
                 >
-                  <PlusCircle size={14} /> Add Item to Request
+                  <PlusCircle size={14} /> Add Another Item
                 </button>
               </div>
 
@@ -647,6 +653,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 onClick={() => {
                   setShowCorrectionModal(false);
                   setCorrectionsList([]);
+                  setCorrectionComment('');
                 }}
                 className="btn btn-outline"
                 disabled={isActionLoading}
@@ -657,33 +664,33 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 type="button"
                 onClick={handleSendCorrectionRequests}
                 className="btn btn-danger"
-                disabled={isActionLoading || correctionsList.length === 0}
+                disabled={isActionLoading || (correctionsList.length === 0 && !correctionComment.trim())}
               >
                 <Send size={15} />
-                {isActionLoading ? 'Dispatching...' : `Dispatch ${correctionsList.length} Correction(s)`}
+                {isActionLoading ? 'Resending...' : 'Resend to Student with Note'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* APPROVE MODAL */}
+      {/* APPROVE / FURTHER PROCESS MODAL */}
       {showApproveModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="card-header">
-              <h3 className="card-title">Confirm Internal Coordinator Approval</h3>
+              <h3 className="card-title">Send for Further Process</h3>
             </div>
             <div className="card-body">
               <div className="alert alert-info" style={{ marginBottom: '16px' }}>
                 <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                  <strong>Institutional Scope:</strong> Approval confirms that this disclosure has passed university pre-screening and is authorized to move to the internal patent drafting and filing phase. It does not constitute a legally granted patent.
+                  <strong>Institutional Scope:</strong> Sending for further process confirms that this disclosure has passed university pre-screening and is authorized to move to the internal patent drafting and filing phase.
                 </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Approval Notes / Forwarding Instructions</label>
+                <label className="form-label">Forwarding / Filing Notes (Optional)</label>
                 <textarea
                   className="form-control"
                   rows={3}
@@ -708,7 +715,7 @@ export const AdminApplicationReviewPage: React.FC = () => {
                 className="btn btn-secondary"
                 disabled={isActionLoading}
               >
-                {isActionLoading ? 'Recording Approval...' : 'Confirm Approval for Next Stage'}
+                {isActionLoading ? 'Processing...' : 'Confirm & Send for Further Process'}
               </button>
             </div>
           </div>

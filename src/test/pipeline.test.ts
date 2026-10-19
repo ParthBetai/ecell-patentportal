@@ -15,7 +15,7 @@ describe('Exact Correction & Pipeline Workflow Verification', () => {
 
   it('progresses through the exact 6-step lifecycle from the pipeline diagram', async () => {
     const student = { id: 'student-test-uuid', role: 'student' as const };
-    const admin = { id: 'admin-dorelal-uuid', role: 'admin' as const };
+    const admin = { id: 'admin-coordinator-uuid', role: 'admin' as const };
 
     // STEP 1: Draft - Student can save and edit
     const draft = await saveDraftApplication(
@@ -54,7 +54,7 @@ describe('Exact Correction & Pipeline Workflow Verification', () => {
       stableId,
       'under_review',
       admin,
-      'Coordinator Dorelal Ji commenced active screening.'
+      'Patent Review Cell commenced active screening.'
     );
     expect(underReview.status).toBe('under_review');
     expect(underReview.id).toBe(stableId);
@@ -112,7 +112,7 @@ describe('Exact Correction & Pipeline Workflow Verification', () => {
       stableId,
       'approved_next_stage',
       admin,
-      'Cleared by Dorelal Ji for institutional patent filing.'
+      'Cleared by Patent Review Cell for institutional patent filing.'
     );
     expect(approved.status).toBe('approved_next_stage');
     expect(approved.id).toBe(stableId);

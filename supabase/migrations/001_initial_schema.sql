@@ -565,8 +565,8 @@ WITH CHECK (
     )
 );
 
--- 8. TRUSTED ADMIN PROVISIONING SCRIPT (For Dorelal Ji)
--- Run this function with designated university email to grant Dorelal Ji admin status securely
+-- 8. TRUSTED ADMIN PROVISIONING SCRIPT (For Patent Cell Coordinator)
+-- Run this function with designated university email to grant admin status securely
 CREATE OR REPLACE FUNCTION provision_admin_account(target_email TEXT)
 RETURNS VOID
 LANGUAGE plpgsql

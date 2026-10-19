@@ -10,8 +10,10 @@ export interface TransitionRule {
 export const VALID_TRANSITIONS: TransitionRule[] = [
   // Student submits initial draft
   { from: 'draft', to: 'submitted', allowedRole: 'student' },
-  // Admin opens submitted application for review
+  // Admin opens submitted application for review or acts directly
   { from: 'submitted', to: 'under_review', allowedRole: 'admin' },
+  { from: 'submitted', to: 'corrections_required', allowedRole: 'admin', requiresReason: true },
+  { from: 'submitted', to: 'approved_next_stage', allowedRole: 'admin' },
   // Admin requests corrections with specific comments
   { from: 'under_review', to: 'corrections_required', allowedRole: 'admin', requiresReason: true },
   // Student resubmits after addressing corrections

@@ -71,7 +71,7 @@ export const App: React.FC = () => {
               }
             />
 
-            {/* Authenticated Administrator Routes (Dorelal Ji) */}
+            {/* Authenticated Administrator Routes (Patent Coordinator / Cell) */}
             <Route
               path="/admin/dashboard"
               element={

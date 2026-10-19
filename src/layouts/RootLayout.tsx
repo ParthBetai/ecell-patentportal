@@ -60,7 +60,7 @@ export const RootLayout: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                Admin (Dorelal Ji)
+                Admin (Patent Cell)
               </button>
             </div>
           )}
@@ -184,7 +184,7 @@ export const RootLayout: React.FC = () => {
                 &copy; {new Date().getFullYear()} Manipal University Jaipur. Directorate of Research & Innovation.
               </p>
               <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Designated Patent Coordinator: Dorelal Ji | Office of Intellectual Property Rights (IPR).
+                Designated Patent Cell: Office of Intellectual Property Rights (IPR).
               </p>
             </div>
             <div className="footer-links">
@@ -193,10 +193,10 @@ export const RootLayout: React.FC = () => {
               </Link>
               <span style={{ color: 'var(--border-medium)' }}>|</span>
               <a
-                href="mailto:dorelal@jaipur.manipal.edu"
+                href="mailto:patent.admin@jaipur.manipal.edu"
                 style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}
               >
-                Coordinator Contact
+                Patent Cell Contact
               </a>
             </div>
           </div>

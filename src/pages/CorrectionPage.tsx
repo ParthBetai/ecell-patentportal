@@ -201,7 +201,7 @@ export const CorrectionPage: React.FC = () => {
         </div>
         <div className="card-body">
           <p style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-            The patent coordinator (Dorelal Ji) has reviewed Version {application.current_version} and requested the following modifications:
+            The patent review coordinator has reviewed Version {application.current_version} and requested the following modifications:
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -308,7 +308,7 @@ export const CorrectionPage: React.FC = () => {
           </div>
           <div className="card-body">
             <p style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
-              If Dorelal Ji requested revised drawings or updated specifications, upload the new files below.
+              If the patent review cell requested revised drawings or updated specifications, upload the new files below.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -390,7 +390,7 @@ export const CorrectionPage: React.FC = () => {
               <textarea
                 className="form-control"
                 rows={3}
-                placeholder="Explain how each item requested by Dorelal Ji was addressed in this revision."
+                placeholder="Explain how each item requested by the patent review cell was addressed in this revision."
                 value={resubmissionNotes}
                 onChange={(e) => setResubmissionNotes(e.target.value)}
                 required

@@ -1,39 +1,44 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
-import { PipelineFlowchart } from '../components/PipelineFlowchart';
 import {
   fetchApplications,
   fetchApplicationById,
   saveDraftApplication,
   submitApplication,
   resubmitApplication,
-  transitionApplicationStatus,
-  createCorrectionRequest,
   uploadDocument,
+  deleteDocument,
+  getSignedDocumentUrl,
 } from '../lib/api';
-import type { Application, ApplicationVersion, DocumentCategory, Inventor } from '../types/database.types';
+import type { Application, Inventor, DocumentCategory } from '../types/database.types';
+import { getStatusDisplayName, getStatusBadgeClass } from '../features/applications/workflow';
 import {
   Shield,
   User,
-  PlusCircle,
+  FileText,
   Save,
   Send,
   CheckCircle2,
   AlertTriangle,
   Upload,
-  History,
-  RotateCcw,
-  Eye,
+  PlusCircle,
+  Trash2,
+  ExternalLink,
+  Lock,
+  RefreshCw,
+  ArrowRight,
+  Info,
 } from 'lucide-react';
 
 export const SimplePipelinePage: React.FC = () => {
   const { currentUser, switchUserRoleForTesting } = useAuth();
+  const navigate = useNavigate();
 
   const [application, setApplication] = useState<Application | null>(null);
-  const [versions, setVersions] = useState<ApplicationVersion[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   // Form Fields
   const [title, setTitle] = useState('');
@@ -44,12 +49,16 @@ export const SimplePipelinePage: React.FC = () => {
   const [practicalApplications, setPracticalApplications] = useState('');
   const [inventors, setInventors] = useState<Partial<Inventor>[]>([]);
 
-  // Correction authoring / handling state
-  const [correctionFeedback, setCorrectionFeedback] = useState('');
+  // Resubmission state for corrections
   const [resubmissionNote, setResubmissionNote] = useState('');
-  const [confirmChecklist, setConfirmChecklist] = useState(false);
+  const [confirmResolution, setConfirmResolution] = useState(false);
 
-  // Load application and versions
+  // Document upload state
+  const [uploadCategory, setUploadCategory] = useState<DocumentCategory>('complete_specification');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+  // Load latest or active application for the current user
   const loadActiveApplication = async () => {
     if (!currentUser) return;
     setIsLoading(true);
@@ -66,18 +75,10 @@ export const SimplePipelinePage: React.FC = () => {
           setNoveltyFeatures(fullApp.novelty_features || '');
           setPracticalApplications(fullApp.practical_applications || '');
           setInventors(fullApp.inventors || []);
-
-          // Fetch versions from local storage
-          const rawVersions = localStorage.getItem('muj_patent_portal_versions');
-          if (rawVersions) {
-            try {
-              const allVersions: ApplicationVersion[] = JSON.parse(rawVersions);
-              setVersions(allVersions.filter((v) => v.application_id === fullApp.id));
-            } catch {
-              setVersions([]);
-            }
-          }
         }
+      } else {
+        // Initialize with default template data for immediate writing
+        resetToEmptyTemplate();
       }
     } catch (err: unknown) {
       console.error('Failed to load application:', err);
@@ -86,74 +87,59 @@ export const SimplePipelinePage: React.FC = () => {
     }
   };
 
+  const resetToEmptyTemplate = () => {
+    setApplication(null);
+    setTitle('Adaptive Energy Harvesting Micro-Controller for Remote IoT Sensors');
+    setTechnicalField('Embedded Systems, Renewable Energy & IoT Telemetry');
+    setBackgroundProblem(
+      'Remote IoT sensor nodes deployed in agricultural and industrial settings suffer from finite battery lifespans, requiring frequent, costly physical maintenance.'
+    );
+    setDescription(
+      'An ultra-low power microcontroller architecture incorporating a dual-mode piezoelectric vibration and ambient photovoltaic energy harvester. The system dynamically adjusts power intake to balance intermittent ambient kinetic energy with continuous operational demands.'
+    );
+    setNoveltyFeatures(
+      'A dual-stage hysteretic impedance matching circuit that dynamically tunes resonant frequency matching to ambient random vibrations without micro-controller power overhead.'
+    );
+    setPracticalApplications(
+      'Precision agriculture soil monitoring, structural health telemetry for bridges, and autonomous industrial machine sensors.'
+    );
+    setInventors([
+      {
+        full_name: currentUser?.full_name || 'Aditya Sharma',
+        email: currentUser?.university_email || 'aditya.sharma@jaipur.manipal.edu',
+        phone: '+91 9876543210',
+        affiliation_type: 'student',
+        department: 'Computer Science and Engineering',
+        is_primary: true,
+      },
+      {
+        full_name: 'Dr. Anita Joshi',
+        email: 'anita.joshi@jaipur.manipal.edu',
+        phone: '+91 9876501234',
+        affiliation_type: 'faculty',
+        department: 'Electrical Engineering',
+        is_primary: false,
+      },
+    ]);
+    setResubmissionNote('');
+    setConfirmResolution(false);
+  };
+
   useEffect(() => {
     loadActiveApplication();
   }, [currentUser]);
 
-  // Create or Reset Sample Application for interactive demonstration
-  const handleStartFreshDemo = async () => {
-    if (!currentUser) return;
-    setIsActionLoading(true);
-    setFeedback(null);
-    try {
-      const newDraft = await saveDraftApplication(
-        {
-          title: 'Adaptive Energy Harvesting Micro-Controller for Remote IoT Sensors',
-          technical_field: 'Embedded Systems and Renewable Energy',
-          background_problem:
-            'Remote IoT sensor nodes deployable in remote agricultural environments suffer from finite battery lifetimes, requiring frequent manual physical battery replacements.',
-          description:
-            'An integrated ultra-low power power-management circuit coupled with dual-mode piezoelectric vibration and photovoltaic ambient transducers.',
-          novelty_features:
-            'A dual-stage hysteretic impedance matching circuit that dynamically scales resonant frequency matching under ambient random vibrations.',
-          practical_applications:
-            'Long-range precision agriculture soil telemetry, industrial machine vibration monitoring, and structural health sensors.',
-        },
-        [
-          {
-            full_name: 'Aditya Sharma',
-            email: 'aditya.sharma@jaipur.manipal.edu',
-            phone: '+91 9876543210',
-            affiliation_type: 'student',
-            department: 'Computer Science and Engineering',
-            is_primary: true,
-          },
-          {
-            full_name: 'Dr. Anita Joshi',
-            email: 'anita.joshi@jaipur.manipal.edu',
-            phone: '+91 9876501234',
-            affiliation_type: 'faculty',
-            department: 'Electrical Engineering',
-            is_primary: false,
-          },
-        ],
-        currentUser.role === 'admin' ? 'student-aditya-uuid' : currentUser.id
-      );
-
-      setFeedback({
-        type: 'success',
-        text: `Fresh demo application created in Draft state (${newDraft.reference_number}).`,
-      });
-      await loadActiveApplication();
-    } catch (err: unknown) {
-      setFeedback({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to reset demo',
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
+  const isEditable = !application || application.status === 'draft' || application.status === 'corrections_required';
 
   // 1. SAVE DRAFT
   const handleSaveDraft = async () => {
-    if (!application || !currentUser) return;
-    setIsActionLoading(true);
+    if (!currentUser) return;
+    setIsSaving(true);
     setFeedback(null);
     try {
       const saved = await saveDraftApplication(
         {
-          id: application.id,
+          id: application?.id,
           title,
           technical_field: technicalField,
           background_problem: backgroundProblem,
@@ -164,9 +150,10 @@ export const SimplePipelinePage: React.FC = () => {
         inventors,
         currentUser.id
       );
+      setApplication(saved);
       setFeedback({
         type: 'success',
-        text: `Draft saved successfully (${saved.reference_number}).`,
+        text: `Draft saved successfully (${saved.reference_number}). You can continue editing anytime.`,
       });
       await loadActiveApplication();
     } catch (err: unknown) {
@@ -175,20 +162,28 @@ export const SimplePipelinePage: React.FC = () => {
         text: err instanceof Error ? err.message : 'Failed to save draft',
       });
     } finally {
-      setIsActionLoading(false);
+      setIsSaving(false);
     }
   };
 
   // 2. SUBMIT APPLICATION
   const handleSubmit = async () => {
-    if (!application || !currentUser) return;
-    setIsActionLoading(true);
+    if (!currentUser) return;
+    if (!title.trim() || !technicalField.trim() || !backgroundProblem.trim() || !description.trim()) {
+      setFeedback({
+        type: 'error',
+        text: 'Please fill in Title, Technical Field, Problem Statement, and Detailed Description before submitting.',
+      });
+      return;
+    }
+
+    setIsSaving(true);
     setFeedback(null);
     try {
-      // Save latest
-      await saveDraftApplication(
+      // First save latest data
+      const saved = await saveDraftApplication(
         {
-          id: application.id,
+          id: application?.id,
           title,
           technical_field: technicalField,
           background_problem: backgroundProblem,
@@ -200,10 +195,16 @@ export const SimplePipelinePage: React.FC = () => {
         currentUser.id
       );
 
-      await submitApplication(application.id, currentUser.id, 'Formal submission for coordinator review.');
+      // Transition to submitted
+      const submitted = await submitApplication(
+        saved.id,
+        currentUser.id,
+        'Submitted by student for official patent review.'
+      );
+      setApplication(submitted);
       setFeedback({
         type: 'success',
-        text: 'Application submitted! It is now sent for coordinator review.',
+        text: `Application submitted successfully (${submitted.reference_number})! It has been forwarded to the Admin Dashboard for screening.`,
       });
       await loadActiveApplication();
     } catch (err: unknown) {
@@ -212,94 +213,25 @@ export const SimplePipelinePage: React.FC = () => {
         text: err instanceof Error ? err.message : 'Submission failed',
       });
     } finally {
-      setIsActionLoading(false);
+      setIsSaving(false);
     }
   };
 
-  // 3. ADMIN: START REVIEW
-  const handleStartReview = async () => {
-    if (!application || !currentUser) return;
-    setIsActionLoading(true);
-    setFeedback(null);
-    try {
-      await transitionApplicationStatus(
-        application.id,
-        'under_review',
-        currentUser,
-        'Dorelal Ji commenced active screening.'
-      );
-      setFeedback({
-        type: 'success',
-        text: 'Application is now Under Review by Coordinator Dorelal Ji.',
-      });
-      await loadActiveApplication();
-    } catch (err: unknown) {
-      setFeedback({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to transition status',
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  // 4. ADMIN: REQUEST CORRECTIONS
-  const handleRequestCorrections = async () => {
-    if (!application || !currentUser) return;
-    if (!correctionFeedback.trim()) {
-      setFeedback({
-        type: 'error',
-        text: 'Please specify the correction details for the student.',
-      });
-      return;
-    }
-
-    setIsActionLoading(true);
-    setFeedback(null);
-    try {
-      await createCorrectionRequest(
-        application.id,
-        currentUser.id,
-        correctionFeedback.trim(),
-        'novelty_features'
-      );
-      await transitionApplicationStatus(
-        application.id,
-        'corrections_required',
-        currentUser,
-        'Dorelal Ji requested specific clarifications on novelty and prior art.'
-      );
-      setCorrectionFeedback('');
-      setFeedback({
-        type: 'success',
-        text: 'Corrections Requested dispatched to the student.',
-      });
-      await loadActiveApplication();
-    } catch (err: unknown) {
-      setFeedback({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to request corrections',
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  // 5. STUDENT: RESUBMIT APPLICATION
+  // 3. RESUBMIT APPLICATION (After Corrections)
   const handleResubmit = async () => {
     if (!application || !currentUser) return;
-    if (!confirmChecklist) {
+    if (!confirmResolution) {
       setFeedback({
         type: 'error',
-        text: 'Please check the box confirming you have addressed all requested modifications.',
+        text: 'Please check the confirmation box indicating that you have addressed the requested modifications.',
       });
       return;
     }
 
-    setIsActionLoading(true);
+    setIsSaving(true);
     setFeedback(null);
     try {
-      // Save modified fields
+      // Save revised fields
       await saveDraftApplication(
         {
           id: application.id,
@@ -314,18 +246,19 @@ export const SimplePipelinePage: React.FC = () => {
         currentUser.id
       );
 
-      // Resubmit: Same application ID, version increments to v2, preserves history
-      await resubmitApplication(
+      // Resubmit to increment version and set status to resubmitted
+      const resubmitted = await resubmitApplication(
         application.id,
         currentUser.id,
-        resubmissionNote.trim() || 'Student updated novelty claims and expanded prior art differentiation.'
+        resubmissionNote.trim() || 'Addressed all reviewer feedback items.'
       );
 
+      setApplication(resubmitted);
       setResubmissionNote('');
-      setConfirmChecklist(false);
+      setConfirmResolution(false);
       setFeedback({
         type: 'success',
-        text: `Application resubmitted successfully with same ID (${application.reference_number}) as Version ${application.current_version + 1}!`,
+        text: `Application resubmitted as Version ${resubmitted.current_version}! It is now back in the Admin Dashboard for re-evaluation.`,
       });
       await loadActiveApplication();
     } catch (err: unknown) {
@@ -334,45 +267,21 @@ export const SimplePipelinePage: React.FC = () => {
         text: err instanceof Error ? err.message : 'Resubmission failed',
       });
     } finally {
-      setIsActionLoading(false);
+      setIsSaving(false);
     }
   };
 
-  // 6. ADMIN: APPROVE FOR NEXT STAGE
-  const handleApprove = async () => {
-    if (!application || !currentUser) return;
-    setIsActionLoading(true);
+  // 4. ATTACH DOCUMENT
+  const handleUploadDocument = async () => {
+    if (!application || !currentUser || !uploadFile) return;
+    setIsUploadingDoc(true);
     setFeedback(null);
     try {
-      await transitionApplicationStatus(
-        application.id,
-        'approved_next_stage',
-        currentUser,
-        'Approved by Coordinator Dorelal Ji for internal patent filing cell processing.'
-      );
+      await uploadDocument(application.id, uploadFile, uploadCategory, currentUser.id);
+      setUploadFile(null);
       setFeedback({
         type: 'success',
-        text: 'Application officially Approved for Next Stage by Coordinator Dorelal Ji!',
-      });
-      await loadActiveApplication();
-    } catch (err: unknown) {
-      setFeedback({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Approval failed',
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  // File upload
-  const handleFileUpload = async (category: DocumentCategory, file: File) => {
-    if (!application || !currentUser) return;
-    try {
-      await uploadDocument(application.id, file, category, currentUser.id);
-      setFeedback({
-        type: 'success',
-        text: `Document "${file.name}" uploaded to private storage.`,
+        text: `Document attached successfully.`,
       });
       await loadActiveApplication();
     } catch (err: unknown) {
@@ -380,633 +289,838 @@ export const SimplePipelinePage: React.FC = () => {
         type: 'error',
         text: err instanceof Error ? err.message : 'Upload failed',
       });
+    } finally {
+      setIsUploadingDoc(false);
+    }
+  };
+
+  // 5. DELETE DOCUMENT
+  const handleDeleteDocument = async (docId: string) => {
+    if (!currentUser || !application) return;
+    if (!confirm('Are you sure you want to remove this attached file?')) return;
+    try {
+      await deleteDocument(docId, currentUser.id);
+      setFeedback({
+        type: 'info',
+        text: 'Attached file deleted.',
+      });
+      await loadActiveApplication();
+    } catch (err: unknown) {
+      setFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Delete failed',
+      });
+    }
+  };
+
+  // 6. INVENTOR MANAGEMENT
+  const handleAddInventor = () => {
+    setInventors([
+      ...inventors,
+      {
+        full_name: '',
+        email: '',
+        phone: '',
+        affiliation_type: 'student',
+        department: '',
+        is_primary: false,
+      },
+    ]);
+  };
+
+  const handleUpdateInventor = (index: number, key: keyof Inventor, value: any) => {
+    const updated = [...inventors];
+    updated[index] = { ...updated[index], [key]: value };
+    setInventors(updated);
+  };
+
+  const handleRemoveInventor = (index: number) => {
+    setInventors(inventors.filter((_, i) => i !== index));
+  };
+
+  const handleStartFreshApplication = () => {
+    if (confirm('Start a new blank application draft? Any unsaved edits on the current view will be cleared.')) {
+      resetToEmptyTemplate();
+      setFeedback({
+        type: 'info',
+        text: 'Ready to write a new patent application draft.',
+      });
     }
   };
 
   if (isLoading) {
     return (
-      <div className="container" style={{ padding: '60px 0', textAlign: 'center' }}>
-        <p>Loading patent pipeline portal...</p>
+      <div className="container" style={{ padding: '64px 0', textAlign: 'center' }}>
+        <p style={{ color: 'var(--text-muted)' }}>Loading student workspace...</p>
       </div>
     );
   }
 
-  const isStudent = currentUser?.role === 'student';
-  const isAdmin = currentUser?.role === 'admin';
-
   return (
-    <div className="container container-narrow">
-      {/* Persona Bar */}
+    <div className="container" style={{ padding: '28px 0 60px' }}>
+      {/* Top Testing Switcher & Quick Navigation */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-medium)',
-          borderRadius: '6px',
-          padding: '12px 16px',
+          borderRadius: 'var(--radius-sm)',
+          padding: '10px 16px',
           marginBottom: '24px',
-          boxShadow: 'var(--shadow-sm)',
           flexWrap: 'wrap',
           gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            Active Perspective:
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem' }}>
+          <Shield size={16} color="var(--accent-primary)" />
+          <span style={{ fontWeight: 600 }}>Active Role:</span>
+          <span style={{ color: 'var(--text-primary)' }}>
+            {currentUser?.role === 'admin' ? 'Patent Review Cell (Admin)' : `Student Applicant (${currentUser?.full_name || 'Aditya Sharma'})`}
           </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => switchUserRoleForTesting('student')}
-              className={`btn btn-sm ${isStudent ? 'btn-primary' : 'btn-outline'}`}
-            >
-              <User size={14} /> Student (Aditya Sharma)
-            </button>
-            <button
-              type="button"
-              onClick={() => switchUserRoleForTesting('admin')}
-              className={`btn btn-sm ${isAdmin ? 'btn-secondary' : 'btn-outline'}`}
-              style={{ borderColor: isAdmin ? 'var(--text-primary)' : 'var(--border-medium)' }}
-            >
-              <Shield size={14} /> Admin Coordinator (Dorelal Ji)
-            </button>
-          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleStartFreshDemo}
-          className="btn btn-outline btn-sm"
-          disabled={isActionLoading}
-        >
-          <RotateCcw size={13} /> Reset Pipeline Demo
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => switchUserRoleForTesting('student')}
+            className={`btn btn-sm ${currentUser?.role === 'student' ? 'btn-primary' : 'btn-outline'}`}
+          >
+            <User size={13} /> Student Mode
+          </button>
+          <button
+            type="button"
+            onClick={() => switchUserRoleForTesting('admin')}
+            className={`btn btn-sm ${currentUser?.role === 'admin' ? 'btn-primary' : 'btn-outline'}`}
+          >
+            <Shield size={13} /> Admin Mode
+          </button>
+          <Link
+            to="/admin/dashboard"
+            className="btn btn-outline btn-sm"
+            style={{ fontWeight: 600, borderColor: 'var(--accent-teal)', color: 'var(--accent-teal)' }}
+          >
+            Go to Admin Dashboard <ArrowRight size={13} />
+          </Link>
+        </div>
       </div>
 
+      {/* Main Page Title Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '24px',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Directorate of Research & Innovation | Patent Cell
+          </div>
+          <h1 style={{ fontSize: '1.75rem', margin: '4px 0 6px', color: 'var(--text-primary)' }}>
+            Patent Application Workspace
+          </h1>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+            Write, edit, draft, and submit your intellectual property disclosure. Submitted applications are screened directly by the university patent review cell.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={handleStartFreshApplication}
+            className="btn btn-outline btn-sm"
+            title="Start writing a new disclosure"
+          >
+            <PlusCircle size={14} /> Start New Application
+          </button>
+          <button
+            type="button"
+            onClick={loadActiveApplication}
+            className="btn btn-outline btn-sm"
+            title="Reload latest status"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Feedback Messages */}
       {feedback && (
         <div
-          className={`alert ${feedback.type === 'success' ? 'alert-success' : 'alert-danger'}`}
+          className={`alert ${
+            feedback.type === 'success'
+              ? 'alert-success'
+              : feedback.type === 'error'
+              ? 'alert-danger'
+              : 'alert-info'
+          }`}
           style={{ marginBottom: '24px' }}
         >
-          {feedback.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+          {feedback.type === 'success' && <CheckCircle2 size={18} />}
+          {feedback.type === 'error' && <AlertTriangle size={18} />}
+          {feedback.type === 'info' && <Info size={18} />}
           <div>{feedback.text}</div>
         </div>
       )}
 
-      {/* 1. VISUAL FLOWCHART (The Exact Pipeline Diagram) */}
-      {application && (
-        <PipelineFlowchart
-          currentStatus={application.status}
-          currentVersion={application.current_version}
-        />
-      )}
-
-      {/* 2. ACTIVE STAGE WORKSPACE */}
-      {application ? (
-        <div className="card" style={{ marginBottom: '28px' }}>
-          <div className="card-header" style={{ justifyContent: 'space-between' }}>
-            <div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Application ID: {application.id}
+      {/* STATUS BANNER CARD */}
+      <div
+        className="card"
+        style={{
+          marginBottom: '28px',
+          backgroundColor:
+            application?.status === 'corrections_required'
+              ? 'var(--color-danger-bg)'
+              : application?.status === 'approved_next_stage'
+              ? 'var(--color-success-bg)'
+              : 'var(--bg-primary)',
+          borderColor:
+            application?.status === 'corrections_required'
+              ? 'var(--color-danger-border)'
+              : application?.status === 'approved_next_stage'
+              ? 'var(--color-success-border)'
+              : 'var(--border-medium)',
+        }}
+      >
+        <div className="card-body">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                Application Ref:
               </span>
-              <h3 className="card-title" style={{ marginTop: '2px' }}>
-                Reference: {application.reference_number} (v{application.current_version})
-              </h3>
+              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                {application?.reference_number || 'New Unsaved Draft'}
+              </strong>
+              <span className={getStatusBadgeClass(application?.status || 'draft')}>
+                {getStatusDisplayName(application?.status || 'draft')}
+              </span>
+              {application && (
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                  Version {application.current_version}
+                </span>
+              )}
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Current Status:</span>
-              <div style={{ fontWeight: 600, color: 'var(--accent-primary)', textTransform: 'uppercase', fontSize: '0.8125rem' }}>
-                {application.status.replace(/_/g, ' ')}
+
+            {/* Quick Actions in Status Bar */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {isEditable && (
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  className="btn btn-outline btn-sm"
+                  disabled={isSaving}
+                >
+                  <Save size={14} />
+                  {isSaving ? 'Saving...' : 'Save Draft'}
+                </button>
+              )}
+
+              {(!application || application.status === 'draft') && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="btn btn-primary btn-sm"
+                  disabled={isSaving}
+                >
+                  <Send size={14} />
+                  Submit Application
+                </button>
+              )}
+
+              {application?.status === 'corrections_required' && (
+                <button
+                  type="button"
+                  onClick={handleResubmit}
+                  className="btn btn-danger btn-sm"
+                  disabled={isSaving || !confirmResolution}
+                >
+                  <Send size={14} />
+                  Resubmit Application
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Contextual Status Guidance */}
+          {(!application || application.status === 'draft') && (
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              <strong>Draft in Progress:</strong> You can edit and save your invention disclosure at any time. When all required sections are completed, click <strong>"Submit Application"</strong> to forward it to the Admin Dashboard for official university screening.
+            </p>
+          )}
+
+          {application?.status === 'submitted' && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <strong>Application Submitted to Admin Dashboard:</strong> Your disclosure has been forwarded to the Patent Review Cell. The administrator can review the disclosure, resend it with a correction note if modifications are needed, or send it for further process. Editing is locked while awaiting review.
+              </p>
+              <Link to={`/admin/applications/${application.id}`} className="btn btn-outline btn-sm">
+                Open in Admin Review <ExternalLink size={12} />
+              </Link>
+            </div>
+          )}
+
+          {application?.status === 'under_review' && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <strong>Under Review by Patent Review Cell:</strong> The patent administrator is actively examining the technical claims, prior art distinctions, and attached files.
+              </p>
+              <Link to={`/admin/applications/${application.id}`} className="btn btn-outline btn-sm">
+                Open in Admin Review <ExternalLink size={12} />
+              </Link>
+            </div>
+          )}
+
+          {/* PROMINENT CORRECTION NOTE DISPLAY */}
+          {application?.status === 'corrections_required' && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-danger)', marginBottom: '8px' }}>
+                <AlertTriangle size={18} />
+                <strong style={{ fontSize: '0.9375rem' }}>Note from Patent Review Cell (Action Required):</strong>
+              </div>
+
+              {application.correction_requests && application.correction_requests.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                  {application.correction_requests.map((corr, idx) => (
+                    <div
+                      key={corr.id || idx}
+                      style={{
+                        padding: '12px 14px',
+                        backgroundColor: 'var(--bg-primary)',
+                        border: '1px solid var(--color-danger-border)',
+                        borderRadius: 'var(--radius-sm)',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-danger)', marginBottom: '4px' }}>
+                        {corr.field_name ? `Requested Modification on: ${corr.field_name}` : 'General Reviewer Note'}
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+                        "{corr.comment}"
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                  The reviewer requested revisions. Please review and update your disclosure fields below.
+                </p>
+              )}
+
+              <p style={{ margin: '0 0 14px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                The application fields below are unlocked for editing. Update your text, attach revised documents if requested, provide a summary note below, and click <strong>"Resubmit Application"</strong>.
+              </p>
+
+              {/* Resubmission Notes Field */}
+              <div
+                style={{
+                  padding: '14px',
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <div className="form-group" style={{ marginBottom: '10px' }}>
+                  <label className="form-label">
+                    Student Resubmission Note (Explain how you addressed the reviewer's note) <span className="required">*</span>
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="e.g. Elaborated the novelty section with experimental benchmark metrics and clarified the dynamic impedance tuning mechanism as requested."
+                    value={resubmissionNote}
+                    onChange={(e) => setResubmissionNote(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    id="confirmCheck"
+                    type="checkbox"
+                    checked={confirmResolution}
+                    onChange={(e) => setConfirmResolution(e.target.checked)}
+                  />
+                  <label htmlFor="confirmCheck" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    I confirm that I have addressed all reviewer modifications and that the updated disclosure is technically accurate.
+                  </label>
+                </div>
               </div>
             </div>
+          )}
+
+          {application?.status === 'resubmitted' && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <strong>Version {application.current_version} Resubmitted:</strong> Your updated application with corrections has been sent back to the Admin Dashboard for re-evaluation.
+              </p>
+              <Link to={`/admin/applications/${application.id}`} className="btn btn-outline btn-sm">
+                Open in Admin Review <ExternalLink size={12} />
+              </Link>
+            </div>
+          )}
+
+          {application?.status === 'approved_next_stage' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success)', marginBottom: '6px' }}>
+                <CheckCircle2 size={18} />
+                <strong style={{ fontSize: '0.9375rem' }}>Application Approved & Sent for Further Process!</strong>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                This disclosure has successfully passed internal university pre-screening and has been authorized for formal patent drafting and statutory Indian Patent Office (IPO) filing preparation with appointed patent attorneys.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* INVENTION DISCLOSURE FORM */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+        {/* Core Technical Disclosure Card */}
+        <div className="card">
+          <div className="card-header" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileText size={18} color="var(--accent-primary)" />
+              <h2 className="card-title">Technical Disclosure Details</h2>
+            </div>
+            {!isEditable && (
+              <span className="badge badge-submitted" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Lock size={12} /> Read Only (Locked under review)
+              </span>
+            )}
           </div>
 
           <div className="card-body">
-            {/* STAGE A: DRAFT WORKSPACE */}
-            {application.status === 'draft' && (
-              <div>
-                <div className="alert alert-info" style={{ marginBottom: '20px' }}>
-                  <strong>Stage 1 - Draft:</strong> You can edit and save your invention disclosure at any time. When ready, click "Submit Application" to forward it to Dorelal Ji for review.
-                </div>
+            {/* 1. Title */}
+            <div className="form-group">
+              <label className="form-label">
+                1. Title of the Invention <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Clear, concise, and technically meaningful title..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={!isEditable}
+                required
+              />
+              <p className="form-helper">
+                Should concisely indicate the subject matter and technical domain without promotional language.
+              </p>
+            </div>
 
-                <div className="form-group">
-                  <label className="form-label">Invention Title</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
+            {/* 2. Technical Field */}
+            <div className="form-group">
+              <label className="form-label">
+                2. Technical Field <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Embedded Systems, Renewable Energy, Biomedical Telemetry"
+                value={technicalField}
+                onChange={(e) => setTechnicalField(e.target.value)}
+                disabled={!isEditable}
+                required
+              />
+              <p className="form-helper">
+                Identify the primary technological domain and industry to which the invention pertains.
+              </p>
+            </div>
 
-                <div className="form-group">
-                  <label className="form-label">Technical Field / Domain</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={technicalField}
-                    onChange={(e) => setTechnicalField(e.target.value)}
-                  />
-                </div>
+            {/* 3. Background Problem */}
+            <div className="form-group">
+              <label className="form-label">
+                3. Background Problem & Existing Limitations (Prior Art) <span className="required">*</span>
+              </label>
+              <textarea
+                className="form-control"
+                rows={4}
+                placeholder="Explain the specific technical problem that existing systems or patents fail to solve..."
+                value={backgroundProblem}
+                onChange={(e) => setBackgroundProblem(e.target.value)}
+                disabled={!isEditable}
+                required
+              />
+              <p className="form-helper">
+                Explain drawbacks, cost bottlenecks, or performance constraints of known conventional solutions.
+              </p>
+            </div>
 
-                <div className="form-group">
-                  <label className="form-label">Problem Statement</label>
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    value={backgroundProblem}
-                    onChange={(e) => setBackgroundProblem(e.target.value)}
-                  />
-                </div>
+            {/* 4. Detailed Description */}
+            <div className="form-group">
+              <label className="form-label">
+                4. Detailed Technical Description of the Invention <span className="required">*</span>
+              </label>
+              <textarea
+                className="form-control"
+                rows={6}
+                placeholder="Describe the structural components, system architecture, electrical/mechanical schematics, and functional mechanism..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!isEditable}
+                required
+              />
+              <p className="form-helper">
+                Provide sufficient detail to enable a skilled practitioner in the domain to reproduce the invention.
+              </p>
+            </div>
 
-                <div className="form-group">
-                  <label className="form-label">Detailed Description</label>
-                  <textarea
-                    className="form-control"
-                    rows={4}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
+            {/* 5. Novelty Features */}
+            <div className="form-group">
+              <label className="form-label">
+                5. Novelty & Inventive Step (What makes it new?) <span className="required">*</span>
+              </label>
+              <textarea
+                className="form-control"
+                rows={4}
+                placeholder="Explicitly list the unique characteristics, algorithms, or structures that distinguish this invention from all prior work..."
+                value={noveltyFeatures}
+                onChange={(e) => setNoveltyFeatures(e.target.value)}
+                disabled={!isEditable}
+                required
+              />
+              <p className="form-helper">
+                This section is scrutinized by the Patent Review Cell to evaluate non-obviousness and novelty under patent law.
+              </p>
+            </div>
 
-                <div className="form-group">
-                  <label className="form-label">Novelty Features</label>
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    value={noveltyFeatures}
-                    onChange={(e) => setNoveltyFeatures(e.target.value)}
-                  />
-                </div>
+            {/* 6. Practical Applications */}
+            <div className="form-group">
+              <label className="form-label">
+                6. Practical Applications & Industrial Applicability
+              </label>
+              <textarea
+                className="form-control"
+                rows={3}
+                placeholder="Target commercial industries, practical implementations, and industrial utility..."
+                value={practicalApplications}
+                onChange={(e) => setPracticalApplications(e.target.value)}
+                disabled={!isEditable}
+              />
+            </div>
+          </div>
+        </div>
 
-                {/* Document Attachments */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label className="form-label">Supporting Documents</label>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
-                      <Upload size={14} /> Attach Specification (PDF)
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) handleFileUpload('complete_specification', e.target.files[0]);
-                        }}
-                      />
-                    </label>
-                    <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
-                      <Upload size={14} /> Attach Drawings (PNG/PDF)
-                      <input
-                        type="file"
-                        accept=".pdf,.png,.jpg"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) handleFileUpload('drawings', e.target.files[0]);
-                        }}
-                      />
-                    </label>
+        {/* Inventors Roster Card */}
+        <div className="card">
+          <div className="card-header" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <User size={18} color="var(--accent-primary)" />
+              <h2 className="card-title">Inventors Roster ({inventors.length})</h2>
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={handleAddInventor}
+                className="btn btn-outline btn-sm"
+              >
+                <PlusCircle size={14} /> Add Co-Inventor
+              </button>
+            )}
+          </div>
+
+          <div className="card-body">
+            {inventors.map((inv, idx) => (
+              <div
+                key={idx}
+                style={{
+                  padding: '16px',
+                  backgroundColor: inv.is_primary ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ fontSize: '0.875rem' }}>
+                      Inventor #{idx + 1}: {inv.full_name || 'Unnamed'}
+                    </strong>
+                    {inv.is_primary && (
+                      <span className="badge badge-submitted">Primary Applicant</span>
+                    )}
                   </div>
-                  {application.application_documents && application.application_documents.length > 0 && (
-                    <div style={{ marginTop: '10px', fontSize: '0.8125rem', color: 'var(--color-success)' }}>
-                      Attached: {application.application_documents.map((d) => d.original_filename).join(', ')}
-                    </div>
+                  {isEditable && !inv.is_primary && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveInventor(idx)}
+                      className="btn btn-outline btn-sm"
+                      style={{ color: 'var(--color-danger)' }}
+                      title="Remove co-inventor"
+                    >
+                      <Trash2 size={13} /> Remove
+                    </button>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-                  <button
-                    type="button"
-                    onClick={handleSaveDraft}
-                    className="btn btn-outline"
-                    disabled={isActionLoading}
-                  >
-                    <Save size={15} /> Save Draft
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="btn btn-primary"
-                    disabled={isActionLoading}
-                  >
-                    <Send size={15} /> Submit Application
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STAGE B: SUBMITTED WORKSPACE */}
-            {application.status === 'submitted' && (
-              <div>
-                <div className="alert alert-info" style={{ marginBottom: '20px' }}>
-                  <strong>Stage 2 - Submitted:</strong> Application has been dispatched for coordinator review.
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <h4>Invention: {application.title}</h4>
-                  <p style={{ marginTop: '4px', fontSize: '0.875rem' }}>{application.description}</p>
-                </div>
-
-                {isStudent && (
-                  <div
-                    style={{
-                      padding: '16px',
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderRadius: '6px',
-                      fontSize: '0.875rem',
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    Awaiting coordinator pre-screening by Dorelal Ji. Switch to <strong>Admin Mode</strong> above to experience the coordinator examination step.
-                  </div>
-                )}
-
-                {isAdmin && (
-                  <div
-                    style={{
-                      padding: '16px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid var(--border-medium)',
-                      borderRadius: '6px',
-                    }}
-                  >
-                    <h4 style={{ marginBottom: '6px' }}>Coordinator Action (Dorelal Ji):</h4>
-                    <p style={{ fontSize: '0.875rem', marginBottom: '14px' }}>
-                      Click below to open the formal examination phase for this disclosure.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleStartReview}
-                      className="btn btn-primary"
-                      disabled={isActionLoading}
-                    >
-                      <Eye size={15} /> Start Examination (Move to Under Review)
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* STAGE C: UNDER REVIEW WORKSPACE */}
-            {application.status === 'under_review' && (
-              <div>
-                <div className="alert alert-warning" style={{ marginBottom: '20px' }}>
-                  <strong>Stage 3 - Under Review:</strong> Admin (Dorelal Ji) is currently examining the patent disclosure.
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <h4>{application.title}</h4>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    <strong>Problem:</strong> {application.background_problem}
-                  </p>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    <strong>Novelty:</strong> {application.novelty_features}
-                  </p>
-                </div>
-
-                {isStudent ? (
-                  <div
-                    style={{
-                      padding: '16px',
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderRadius: '6px',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    Coordinator Dorelal Ji is examining your disclosure. Switch to <strong>Admin Mode</strong> in the top bar to simulate the coordinator's decision.
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      padding: '18px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid var(--border-medium)',
-                      borderRadius: '6px',
-                    }}
-                  >
-                    <h4 style={{ marginBottom: '12px' }}>Coordinator Decision (Dorelal Ji):</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label">
-                          Specific Correction Notes (If requesting revisions):
-                        </label>
-                        <textarea
-                          className="form-control"
-                          rows={2}
-                          placeholder="e.g. Please clarify the impedance matching novelty in Section 5 and attach higher resolution circuit drawings."
-                          value={correctionFeedback}
-                          onChange={(e) => setCorrectionFeedback(e.target.value)}
-                        />
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={handleRequestCorrections}
-                          className="btn btn-danger"
-                          disabled={isActionLoading || !correctionFeedback.trim()}
-                        >
-                          <AlertTriangle size={15} /> Request Corrections
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleApprove}
-                          className="btn btn-secondary"
-                          disabled={isActionLoading}
-                        >
-                          <CheckCircle2 size={15} /> Approve for Next Stage
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* STAGE D: CORRECTIONS REQUIRED WORKSPACE */}
-            {application.status === 'corrections_required' && (
-              <div>
-                <div
-                  className="alert alert-danger"
-                  style={{
-                    backgroundColor: 'rgba(234, 88, 12, 0.1)',
-                    borderColor: '#f97316',
-                    color: '#c2410c',
-                    marginBottom: '20px',
-                  }}
-                >
-                  <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <div>
-                    <strong>Stage 4 - Corrections Required:</strong> The patent coordinator has requested specific revisions before this application can be approved.
-                  </div>
-                </div>
-
-                {/* Display itemized comments */}
-                {application.correction_requests && application.correction_requests.length > 0 && (
-                  <div
-                    style={{
-                      padding: '14px 18px',
-                      backgroundColor: '#fff7ed',
-                      border: '1px solid #fed7aa',
-                      borderRadius: '6px',
-                      marginBottom: '20px',
-                    }}
-                  >
-                    <strong style={{ fontSize: '0.875rem', color: '#c2410c' }}>
-                      Coordinator Comment from Dorelal Ji:
-                    </strong>
-                    <p style={{ margin: '6px 0 0', fontSize: '0.9375rem', color: '#7c2d12' }}>
-                      "{application.correction_requests[application.correction_requests.length - 1].comment}"
-                    </p>
-                  </div>
-                )}
-
-                {/* Student In-Place Editing */}
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ marginBottom: '10px' }}>Edit Same Application (In-Place Revision):</h4>
-
-                  <div className="form-group">
-                    <label className="form-label">Novelty Characteristics (Address coordinator comments)</label>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      value={noveltyFeatures}
-                      onChange={(e) => setNoveltyFeatures(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Detailed Description</label>
-                    <textarea
-                      className="form-control"
-                      rows={4}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Resubmission Summary (What changed in this revision?)</label>
-                    <textarea
-                      className="form-control"
-                      rows={2}
-                      placeholder="e.g. Expanded the explanation of dual-stage switching circuitry and prior art distinctions."
-                      value={resubmissionNote}
-                      onChange={(e) => setResubmissionNote(e.target.value)}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0' }}>
+                <div className="grid-3" style={{ gap: '12px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Full Name</label>
                     <input
-                      id="confirmCheck"
-                      type="checkbox"
-                      checked={confirmChecklist}
-                      onChange={(e) => setConfirmChecklist(e.target.checked)}
+                      type="text"
+                      className="form-control"
+                      value={inv.full_name || ''}
+                      onChange={(e) => handleUpdateInventor(idx, 'full_name', e.target.value)}
+                      disabled={!isEditable}
                     />
-                    <label htmlFor="confirmCheck" style={{ fontSize: '0.875rem' }}>
-                      I confirm that all requested corrections have been addressed and verified.
-                    </label>
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-                  <button
-                    type="button"
-                    onClick={handleResubmit}
-                    className="btn btn-primary"
-                    disabled={isActionLoading || !confirmChecklist}
-                  >
-                    <Send size={15} /> Resubmit Application (Creates Version {application.current_version + 1})
-                  </button>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>University Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={inv.email || ''}
+                      onChange={(e) => handleUpdateInventor(idx, 'email', e.target.value)}
+                      disabled={!isEditable}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Affiliation</label>
+                    <select
+                      className="form-control"
+                      value={inv.affiliation_type || 'student'}
+                      onChange={(e) => handleUpdateInventor(idx, 'affiliation_type', e.target.value)}
+                      disabled={!isEditable}
+                    >
+                      <option value="student">Student</option>
+                      <option value="faculty">Faculty Member</option>
+                      <option value="research_scholar">Research Scholar</option>
+                      <option value="external">External Collaborator</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Department</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={inv.department || ''}
+                      onChange={(e) => handleUpdateInventor(idx, 'department', e.target.value)}
+                      disabled={!isEditable}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Contact Phone</label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      value={inv.phone || ''}
+                      onChange={(e) => handleUpdateInventor(idx, 'phone', e.target.value)}
+                      disabled={!isEditable}
+                    />
+                  </div>
                 </div>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
 
-            {/* STAGE E: RESUBMITTED (ADMIN REVIEWS AGAIN) */}
-            {application.status === 'resubmitted' && (
-              <div>
-                <div className="alert alert-info" style={{ marginBottom: '20px' }}>
-                  <strong>Stage 5 - Student Edits and Resubmits:</strong> Application has been resubmitted with the same ID ({application.reference_number}) as Version {application.current_version}.
-                </div>
+        {/* Document Attachments Card */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Attached Technical Documents & Drawings</h2>
+          </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <h4>{application.title} (Version {application.current_version})</h4>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    {application.novelty_features}
-                  </p>
-                </div>
-
-                {isAdmin ? (
+          <div className="card-body">
+            {/* Existing Documents List */}
+            {application?.application_documents && application.application_documents.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                {application.application_documents.map((doc) => (
                   <div
+                    key={doc.id}
                     style={{
-                      padding: '18px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid var(--border-medium)',
-                      borderRadius: '6px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-light)',
                     }}
                   >
-                    <h4 style={{ marginBottom: '10px' }}>Admin Reviews Again (Dorelal Ji):</h4>
-                    <p style={{ fontSize: '0.875rem', marginBottom: '14px' }}>
-                      Verify the student's updated version. You can either request further revisions or grant final internal approval.
-                    </p>
+                    <div>
+                      <strong style={{ fontSize: '0.875rem' }}>{doc.original_filename}</strong>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Category: <strong>{doc.document_category}</strong> | Size: {(doc.file_size_bytes / 1024).toFixed(1)} KB | Uploaded: {new Date(doc.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
 
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                       <button
                         type="button"
-                        onClick={handleApprove}
-                        className="btn btn-secondary"
-                        disabled={isActionLoading}
-                      >
-                        <CheckCircle2 size={15} /> Approve for Next Stage
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCorrectionFeedback('Further clarification required.');
-                          handleRequestCorrections();
+                        onClick={async () => {
+                          const url = await getSignedDocumentUrl(doc.storage_path);
+                          window.open(url, '_blank');
                         }}
-                        className="btn btn-outline"
-                        disabled={isActionLoading}
+                        className="btn btn-outline btn-sm"
+                        title="Download / View document"
                       >
-                        Request Further Corrections
+                        <ExternalLink size={13} /> View
                       </button>
+                      {isEditable && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="btn btn-outline btn-sm"
+                          style={{ color: 'var(--color-danger)' }}
+                          title="Delete document"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div
-                    style={{
-                      padding: '16px',
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderRadius: '6px',
-                      fontSize: '0.875rem',
-                    }}
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                No technical specifications or drawings attached yet.
+              </p>
+            )}
+
+            {/* Upload Attachment Control */}
+            {isEditable && (
+              <div
+                style={{
+                  padding: '14px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <h4 style={{ fontSize: '0.875rem', margin: '0 0 10px' }}>Attach New Document</h4>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <select
+                    className="form-control"
+                    style={{ width: 'auto' }}
+                    value={uploadCategory}
+                    onChange={(e) => setUploadCategory(e.target.value as DocumentCategory)}
                   >
-                    Version {application.current_version} has been received by Dorelal Ji. Switch to <strong>Admin Mode</strong> in the top bar to review and approve.
-                  </div>
+                    <option value="complete_specification">Complete Specification (PDF / DOCX)</option>
+                    <option value="drawings">Technical Drawings / Flowcharts (PDF / PNG)</option>
+                    <option value="prior_art_reference">Prior Art Comparison (PDF)</option>
+                    <option value="inventor_declaration">Inventor Declaration / NOC (PDF)</option>
+                  </select>
+
+                  <input
+                    type="file"
+                    className="form-control"
+                    style={{ width: 'auto', flex: 1 }}
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleUploadDocument}
+                    className="btn btn-outline btn-sm"
+                    disabled={!uploadFile || isUploadingDoc || !application}
+                  >
+                    <Upload size={14} />
+                    {isUploadingDoc ? 'Uploading...' : 'Upload File'}
+                  </button>
+                </div>
+                {!application && (
+                  <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Save draft first to enable file attachments.
+                  </p>
                 )}
               </div>
             )}
-
-            {/* STAGE F: APPROVED FOR NEXT STAGE */}
-            {application.status === 'approved_next_stage' && (
-              <div style={{ textAlign: 'center', padding: '24px 16px' }}>
-                <div
-                  style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
-                    color: 'var(--color-success)',
-                  }}
-                >
-                  <CheckCircle2 size={36} />
-                </div>
-                <h3 style={{ fontSize: '1.25rem', color: 'var(--color-success)', marginBottom: '8px' }}>
-                  Approved for Next Stage
-                </h3>
-                <p style={{ maxWidth: '540px', margin: '0 auto 20px', fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
-                  Application <strong>{application.reference_number}</strong> has successfully cleared coordinator pre-screening by Dorelal Ji and has been authorized for forward processing into statutory patent drafting.
-                </p>
-
-                <div
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '6px',
-                    padding: '12px 16px',
-                    maxWidth: '560px',
-                    margin: '0 auto',
-                    fontSize: '0.8125rem',
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  <strong>University Legal Disclaimer:</strong> Internal approval authorizes the disclosure for forward processing into statutory patent drafting. It does not constitute a legally granted patent from the Indian Patent Office (IPO).
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      ) : (
-        <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
-          <h3>No Active Application</h3>
-          <p style={{ margin: '8px 0 20px', color: 'var(--text-muted)' }}>
-            Click below to create an application and walk through the entire pipeline.
-          </p>
-          <button type="button" onClick={handleStartFreshDemo} className="btn btn-primary">
-            <PlusCircle size={16} /> Create Sample Application
-          </button>
-        </div>
-      )}
 
-      {/* 3. IMMUTABLE VERSION HISTORY & AUDIT TRAIL */}
-      <div className="card" style={{ marginBottom: '40px' }}>
-        <div className="card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <History size={18} color="var(--accent-primary)" />
-            <h3 className="card-title" style={{ margin: 0 }}>
-              Immutable Version History & Previous Submissions ({versions.length})
-            </h3>
-          </div>
-        </div>
-        <div className="card-body">
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            The database retains all previous submissions and snapshot records. Nothing is overwritten without an audit trail of what changed.
-          </p>
-
-          {versions.length === 0 ? (
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              No submitted version snapshots recorded yet. When you submit or resubmit, an immutable snapshot will appear here.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {versions.map((ver) => (
-                <div
-                  key={ver.id}
-                  style={{
-                    padding: '14px 16px',
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '6px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span
-                        style={{
-                          backgroundColor: '#0f172a',
-                          color: '#ffffff',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                        }}
-                      >
-                        Version {ver.version_number}
-                      </span>
-                      <strong style={{ fontSize: '0.875rem' }}>
-                        {ver.submission_notes || 'Submission recorded'}
-                      </strong>
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {new Date(ver.submitted_at).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    Title: <strong>{(ver.snapshot_data as any)?.title || 'Untitled'}</strong>
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Novelty: {(ver.snapshot_data as any)?.novelty_features || 'N/A'}
-                  </div>
-                </div>
-              ))}
+        {/* BOTTOM ACTION BAR */}
+        <div
+          className="card"
+          style={{
+            position: 'sticky',
+            bottom: '16px',
+            boxShadow: 'var(--shadow-md)',
+            borderTop: '2px solid var(--accent-primary)',
+          }}
+        >
+          <div
+            className="card-body"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              padding: '16px 24px',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Status: </span>
+              <strong>{getStatusDisplayName(application?.status || 'draft')}</strong>
+              {application && (
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                  (Ref: {application.reference_number})
+                </span>
+              )}
             </div>
-          )}
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {isEditable && (
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  className="btn btn-outline"
+                  disabled={isSaving}
+                >
+                  <Save size={16} />
+                  {isSaving ? 'Saving Draft...' : 'Save Draft Progress'}
+                </button>
+              )}
+
+              {(!application || application.status === 'draft') && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="btn btn-primary"
+                  disabled={isSaving}
+                >
+                  <Send size={16} />
+                  {isSaving ? 'Submitting...' : 'Submit Application to Admin'}
+                </button>
+              )}
+
+              {application?.status === 'corrections_required' && (
+                <button
+                  type="button"
+                  onClick={handleResubmit}
+                  className="btn btn-danger"
+                  disabled={isSaving || !confirmResolution}
+                >
+                  <Send size={16} />
+                  {isSaving ? 'Resubmitting...' : `Resubmit Application (v${application.current_version + 1})`}
+                </button>
+              )}
+
+              {application && application.status !== 'draft' && application.status !== 'corrections_required' && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="btn btn-secondary"
+                >
+                  <Shield size={16} /> Open in Admin Dashboard
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

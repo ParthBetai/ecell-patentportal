@@ -19,7 +19,7 @@ export const LandingPage: React.FC = () => {
       <div className="alert alert-info" style={{ marginBottom: '32px' }}>
         <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
-          <strong>Institutional Screening Notice:</strong> This portal facilitates internal university pre-screening and coordinator review by Dorelal Ji. University approval enables forward processing toward formal patent filing and does not constitute a granted patent from the Indian Patent Office (IPO).
+          <strong>Institutional Screening Notice:</strong> This portal facilitates internal university pre-screening and coordinator review by the Patent Review Cell. University approval enables forward processing toward formal patent filing and does not constitute a granted patent from the Indian Patent Office (IPO).
         </div>
       </div>
 
@@ -58,7 +58,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '28px' }}>
-            A structured, secure platform for MUJ students and faculty to submit intellectual property disclosures, track coordinator reviews, and resolve correction requests directly with the university patent coordinator, Dorelal Ji.
+            A structured, secure platform for MUJ students and faculty to submit intellectual property disclosures, track coordinator reviews, and resolve correction requests directly with the university patent review cell.
           </p>
 
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -134,7 +134,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <h3 style={{ fontSize: '1.125rem', marginBottom: '8px' }}>2. Private Document Storage</h3>
               <p style={{ fontSize: '0.875rem' }}>
-                Supporting technical specifications, drawings, and prior-art documents are stored in access-restricted private storage accessible only by the applicant and Dorelal Ji.
+                Supporting technical specifications, drawings, and prior-art documents are stored in access-restricted private storage accessible only by the applicant and authorized patent cell reviewers.
               </p>
             </div>
           </div>

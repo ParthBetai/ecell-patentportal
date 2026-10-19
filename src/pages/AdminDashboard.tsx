@@ -143,7 +143,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="card-header">
           <h2 className="card-title">Submitted Disclosures ({filteredApplications.length})</h2>
           <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            Designated Coordinator: Dorelal Ji
+            Designated Authority: Patent Review Cell
           </span>
         </div>
 

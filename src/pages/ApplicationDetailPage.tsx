@@ -180,7 +180,7 @@ export const ApplicationDetailPage: React.FC = () => {
               Corrections Requested by Patent Coordinator
             </h4>
             <p style={{ margin: '0 0 10px', fontSize: '0.875rem' }}>
-              Dorelal Ji has flagged specific items requiring modification or clarification before this disclosure can be approved.
+              The patent review cell has flagged specific items requiring modification or clarification before this disclosure can be approved.
             </p>
             {isOwner && (
               <Link to={`/applications/${application.id}/corrections`} className="btn btn-danger btn-sm">

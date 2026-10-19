@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: session.user.id,
                 university_email: session.user.email || '',
                 full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-                role: session.user.email?.toLowerCase() === 'dorelal@jaipur.manipal.edu' ? 'admin' : 'student',
+                role: session.user.email?.toLowerCase() === 'patent.admin@jaipur.manipal.edu' ? 'admin' : 'student',
               });
               setCurrentUser(newProfile);
             }
@@ -117,12 +117,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Local mock login:
-      const isAdmin = normalizedEmail === 'dorelal@jaipur.manipal.edu';
-      const userId = isAdmin ? 'admin-dorelal-uuid' : `student-${normalizedEmail.split('@')[0]}`;
+      const isAdmin = normalizedEmail === 'patent.admin@jaipur.manipal.edu';
+      const userId = isAdmin ? 'admin-coordinator-uuid' : `student-${normalizedEmail.split('@')[0]}`;
       const profile = await upsertProfile({
         id: userId,
         university_email: normalizedEmail,
-        full_name: isAdmin ? 'Dorelal Ji' : normalizedEmail.split('@')[0].replace('.', ' '),
+        full_name: isAdmin ? 'Patent Coordinator' : normalizedEmail.split('@')[0].replace('.', ' '),
         role: isAdmin ? 'admin' : 'student',
       });
 
@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const switchUserRoleForTesting = async (role: AppRole) => {
     setIsLoading(true);
     try {
-      const targetId = role === 'admin' ? 'admin-dorelal-uuid' : 'student-aditya-uuid';
+      const targetId = role === 'admin' ? 'admin-coordinator-uuid' : 'student-aditya-uuid';
       const profile = await fetchCurrentProfile(targetId);
       if (profile) {
         setCurrentUser(profile);

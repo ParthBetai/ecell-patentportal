@@ -2,7 +2,7 @@
 
 An institutional intellectual property disclosure and patent management system developed for Manipal University Jaipur (MUJ).
 
-The portal replaces manual email attachments to the designated university patent coordinator, **Dorelal Ji**, providing a structured, secure, and transparent workflow for students, faculty inventors, and university administration.
+The portal replaces manual email attachments to the university patent coordinator and review cell, providing a structured, secure, and transparent workflow for students, faculty inventors, and university administration.
 
 > **Institutional Notice**: This portal manages internal university patent pre-screening and coordinator review. Internal coordinator approval authorizes the disclosure for forward processing into statutory patent drafting. It does not constitute a legally granted patent from the Indian Patent Office (IPO) or Controller General of Patents, Designs and Trade Marks (CGPDTM).
 
@@ -32,7 +32,7 @@ The portal replaces manual email attachments to the designated university patent
 - **Draft Autosave & Incomplete Progress**: Students can save draft disclosures at any stage without mandatory validation blocking.
 - **Private Document Management**: Complete specifications (PDF/DOCX), technical drawings (PDF/PNG), and guide NOCs are stored in private storage with short-lived (15-minute) signed access URLs.
 - **Itemized Correction Workspace**: When the coordinator requests changes, students view exact field or document comments, edit the same application in place, replace flawed files, confirm resolution, and resubmit.
-- **Strict Role-Based Access Control**: Student isolation prevents viewing or editing another student's disclosure. Dorelal Ji has authorized administrative oversight over all departmental submissions.
+- **Strict Role-Based Access Control**: Student isolation prevents viewing or editing another student's disclosure. The Patent Coordinator has authorized administrative oversight over all departmental submissions.
 - **Complete Audit Trail**: Immutable submission snapshots, status transition logs, actor IDs, reasons, and timestamps.
 - **Zero AI or Template Gimmicks**: Restrained editorial UI (slate/navy palette, rectangular buttons, Inter typography, no purple gradients, no em dashes, no fake metrics).
 
@@ -103,13 +103,13 @@ Status transitions are governed by strict state machine rules:
 
 ```
 [Draft] ----------> [Submitted] ----------> [Under Review]
- (Student)            (Student)                (Coordinator: Dorelal Ji)
+ (Student)            (Student)                (Coordinator / Admin)
                                                    |
                         +--------------------------+--------------------------+
                         |                                                     |
                         v                                                     v
               [Corrections Required]                                [Approved for Next Stage]
-             (Coordinator: Dorelal Ji)                               (Coordinator: Dorelal Ji)
+             (Coordinator / Admin)                                 (Coordinator / Admin)
                         |
                         | (Student fixes issues)
                         v
@@ -122,10 +122,10 @@ Status transitions are governed by strict state machine rules:
 
 ### Permitted Transitions:
 - `draft` to `submitted`: Allowed for applicant owner when all mandatory fields are present.
-- `submitted` to `under_review`: Allowed for coordinator (Dorelal Ji).
+- `submitted` to `under_review`: Allowed for coordinator / admin.
 - `under_review` to `corrections_required`: Allowed for coordinator with itemized feedback.
 - `corrections_required` to `resubmitted`: Allowed for student owner upon resolving all pending items.
-- `resubmitted` to `under_review`: Allowed for coordinator.
+- `resubmitted` to `under_review`: Allowed for coordinator / admin.
 - `under_review` to `approved_next_stage`: Allowed for coordinator for internal patent cell forwarding.
 
 ---
@@ -156,7 +156,7 @@ The portal will open at `http://localhost:5173`.
 ### Interactive Test Personas
 The application includes a built-in top notification bar with instant persona switching for testing:
 - **Student View**: Operates as applicant `Aditya Sharma` (`aditya.sharma@jaipur.manipal.edu`).
-- **Admin View**: Operates as coordinator `Dorelal Ji` (`dorelal@jaipur.manipal.edu`).
+- **Admin View**: Operates as coordinator `Patent Coordinator` (`patent.admin@jaipur.manipal.edu`).
 
 ---
 
@@ -185,13 +185,13 @@ All database tables, enums, triggers, and Row Level Security policies are locate
 - Students sign in with their university email address (`@jaipur.manipal.edu` or `@muj.manipal.edu`).
 - On initial sign-in via Supabase Auth, the database trigger `on_auth_user_created` creates a corresponding record in `profiles` with default role `student`.
 
-### Dorelal Ji (Admin) Provisioning
-To assign administrator status to Dorelal Ji:
+### Patent Coordinator (Admin) Provisioning
+To assign administrator status to the patent coordinator:
 1. In the Supabase SQL Editor, execute the secure database function:
 ```sql
-SELECT provision_admin_account('dorelal@jaipur.manipal.edu');
+SELECT provision_admin_account('patent.admin@jaipur.manipal.edu');
 ```
-2. This assigns `role = 'admin'` to Dorelal Ji's profile.
+2. This assigns `role = 'admin'` to the coordinator's profile.
 3. Because role assignments are protected by database triggers and security definer functions, students cannot grant themselves admin rights.
 
 ---
@@ -202,7 +202,7 @@ SELECT provision_admin_account('dorelal@jaipur.manipal.edu');
 - **Visibility**: Strictly Private (Public access disabled).
 - **Allowed MIME Types**: `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `image/png`, `image/jpeg`.
 - **Maximum File Size**: 25 Megabytes (enforced on both client and database bucket policies).
-- **Access Authorization**: Storage objects can only be downloaded by the application owner or Dorelal Ji using 15-minute short-lived signed URLs generated via `createSignedUrl()`.
+- **Access Authorization**: Storage objects can only be downloaded by the application owner or authorized Patent Coordinator using 15-minute short-lived signed URLs generated via `createSignedUrl()`.
 
 ---
 
@@ -256,7 +256,7 @@ The compiled production bundle is generated in `dist/`.
 ## 11. Privacy Policy Review Checklist
 
 Before opening the portal to students, the MUJ Legal & Registrar team should review `/privacy-policy`:
-- [ ] Confirm official institutional email address for patent queries (`dorelal@jaipur.manipal.edu`).
+- [ ] Confirm official institutional email address for patent queries (`patent.admin@jaipur.manipal.edu`).
 - [ ] Validate data retention schedule for approved disclosures (recommended: 7 years).
 - [ ] Confirm retention and cleanup policy for abandoned drafts (recommended: 12 months).
 - [ ] Verify escalation contact address for data protection queries (`registrar@jaipur.manipal.edu`).
@@ -267,7 +267,7 @@ Before opening the portal to students, the MUJ Legal & Registrar team should rev
 
 - [ ] Confirm that `VITE_SUPABASE_ANON_KEY` is the only client-exposed credential. Never commit the `service_role` secret to frontend code or GitHub.
 - [ ] Ensure that `patent-documents` storage bucket is set to `public = false`.
-- [ ] Verify that Dorelal Ji's account is provisioned with `role = 'admin'`.
+- [ ] Verify that the coordinator account is provisioned with `role = 'admin'`.
 - [ ] Check that Row Level Security (RLS) is enabled on all tables in production.
 - [ ] Verify that production domain redirect URLs are locked in Supabase Auth settings.
 
@@ -279,8 +279,8 @@ Before opening the portal to students, the MUJ Legal & Registrar team should rev
    - Replace placeholder credentials in `.env` with actual values from your project dashboard (`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`).
 2. **Execute Initial Migration**:
    - Run `supabase/migrations/001_initial_schema.sql` in the Supabase SQL editor.
-3. **Provision Dorelal Ji's Account**:
-   - Run `SELECT provision_admin_account('dorelal@jaipur.manipal.edu');`.
+3. **Provision Patent Coordinator Account**:
+   - Run `SELECT provision_admin_account('patent.admin@jaipur.manipal.edu');`.
 4. **Institutional Single Sign-On (SSO)**:
    - (Optional) Configure Microsoft Entra ID or Google Workspace SSO in Supabase Auth to enable one-click MUJ student authentication.
 5. **DNS & Custom Domain**:

@@ -953,7 +953,7 @@ export const ApplicationFormPage: React.FC = () => {
                 color: 'var(--text-secondary)',
               }}
             >
-              <strong>Institutional Confirmation:</strong> By clicking "Submit Application", your disclosure will be submitted to the patent coordinator (Dorelal Ji) for official screening. Once submitted, editing will be locked until the coordinator requests corrections or opens a revision cycle.
+              <strong>Institutional Confirmation:</strong> By clicking "Submit Application", your disclosure will be submitted to the Patent Review Cell for official screening. Once submitted, editing will be locked until the coordinator requests corrections or opens a revision cycle.
             </div>
           </div>
           <div className="card-footer">
@@ -985,7 +985,7 @@ export const ApplicationFormPage: React.FC = () => {
               </p>
               <ul style={{ paddingLeft: '20px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 <li>Your draft will transition to <strong>Submitted</strong> status.</li>
-                <li>Dorelal Ji will receive access to your disclosure and documents.</li>
+                <li>The Patent Review Cell will receive access to your disclosure and documents.</li>
                 <li>You will be notified in-portal if specific corrections or clarifications are required.</li>
               </ul>
             </div>
