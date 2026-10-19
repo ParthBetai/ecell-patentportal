@@ -5,6 +5,7 @@ import { RootLayout } from './layouts/RootLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Pages
+import { SimplePipelinePage } from './pages/SimplePipelinePage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { StudentDashboard } from './pages/StudentDashboard';
@@ -21,8 +22,10 @@ export const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           <Route element={<RootLayout />}>
-            {/* Public Institutional Routes */}
-            <Route path="/" element={<LandingPage />} />
+            {/* Primary Interactive Pipeline Portal */}
+            <Route path="/" element={<SimplePipelinePage />} />
+            <Route path="/pipeline" element={<SimplePipelinePage />} />
+            <Route path="/overview" element={<LandingPage />} />
             <Route path="/auth/login" element={<LoginPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 

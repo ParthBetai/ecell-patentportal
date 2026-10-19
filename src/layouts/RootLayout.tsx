@@ -82,6 +82,12 @@ export const RootLayout: React.FC = () => {
             </Link>
 
             <nav className="nav-links">
+              <Link
+                to="/"
+                className={`nav-item ${location.pathname === '/' || location.pathname === '/pipeline' ? 'active' : ''}`}
+              >
+                Patent Pipeline
+              </Link>
               {currentUser ? (
                 <>
                   {currentUser.role === 'admin' ? (
@@ -89,7 +95,7 @@ export const RootLayout: React.FC = () => {
                       to="/admin/dashboard"
                       className={`nav-item ${location.pathname.startsWith('/admin') ? 'active' : ''}`}
                     >
-                      Admin Dashboard
+                      Admin Registry
                     </Link>
                   ) : (
                     <>
@@ -116,9 +122,6 @@ export const RootLayout: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}>
-                    Home
-                  </Link>
                   <Link
                     to="/privacy-policy"
                     className={`nav-item ${location.pathname === '/privacy-policy' ? 'active' : ''}`}

@@ -18,6 +18,8 @@ export const VALID_TRANSITIONS: TransitionRule[] = [
   { from: 'corrections_required', to: 'resubmitted', allowedRole: 'student' },
   // Admin re-evaluates resubmitted application
   { from: 'resubmitted', to: 'under_review', allowedRole: 'admin' },
+  { from: 'resubmitted', to: 'corrections_required', allowedRole: 'admin', requiresReason: true },
+  { from: 'resubmitted', to: 'approved_next_stage', allowedRole: 'admin' },
   // Admin approves for internal next stage
   { from: 'under_review', to: 'approved_next_stage', allowedRole: 'admin' },
 ];
