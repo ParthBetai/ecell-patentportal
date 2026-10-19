@@ -15,6 +15,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_AUTH_USER_KEY = 'muj_patent_auth_user';
 
+export const ALLOWED_EMAIL_DOMAIN = '@muj.manipal.edu';
+
+export function isAllowedUniversityEmail(email: string): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return normalized.endsWith(ALLOWED_EMAIL_DOMAIN);
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -36,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: session.user.id,
                 university_email: session.user.email || '',
                 full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-                role: session.user.email?.toLowerCase() === 'patent.admin@jaipur.manipal.edu' ? 'admin' : 'student',
+                role: session.user.email?.toLowerCase() === 'patent.admin@muj.manipal.edu' ? 'admin' : 'student',
               });
               setCurrentUser(newProfile);
             }
@@ -84,16 +92,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      // University domain validation check
-      const isUniversityDomain =
-        normalizedEmail.endsWith('@jaipur.manipal.edu') ||
-        normalizedEmail.endsWith('@muj.manipal.edu') ||
-        normalizedEmail.endsWith('@manipal.edu');
-
-      if (!isUniversityDomain) {
+      // University domain validation check - accepted domain is strictly @muj.manipal.edu
+      if (!isAllowedUniversityEmail(normalizedEmail)) {
         return {
           error:
-            'Please use an approved university email address (ending with @jaipur.manipal.edu or @muj.manipal.edu).',
+            'Access restricted. Accepted email domain is exclusively @muj.manipal.edu.',
         };
       }
 
@@ -117,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Local mock login:
-      const isAdmin = normalizedEmail === 'patent.admin@jaipur.manipal.edu';
+      const isAdmin = normalizedEmail === 'patent.admin@muj.manipal.edu';
       const userId = isAdmin ? 'admin-coordinator-uuid' : `student-${normalizedEmail.split('@')[0]}`;
       const profile = await upsertProfile({
         id: userId,

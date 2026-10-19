@@ -9,6 +9,7 @@ import {
   MAX_DOCUMENT_SIZE_BYTES,
 } from '../lib/api';
 import { canTransition } from '../features/applications/workflow';
+import { isAllowedUniversityEmail } from '../features/auth/AuthContext';
 
 describe('Security & Access Control Tests', () => {
   beforeEach(() => {
@@ -32,7 +33,7 @@ describe('Security & Access Control Tests', () => {
   it('prevents students from promoting their own account to admin', async () => {
     const student = {
       id: 'student-charlie-uuid',
-      university_email: 'charlie@jaipur.manipal.edu',
+      university_email: 'charlie@muj.manipal.edu',
       full_name: 'Charlie Student',
       role: 'student' as const,
     };
@@ -106,5 +107,23 @@ describe('Security & Access Control Tests', () => {
     // Approved application cannot transition back to draft
     expect(canTransition('approved_next_stage', 'draft', 'student')).toBe(false);
     expect(canTransition('approved_next_stage', 'draft', 'admin')).toBe(false);
+  });
+
+  describe('University Email Domain Enforcement', () => {
+    it('accepts valid @muj.manipal.edu email addresses', () => {
+      expect(isAllowedUniversityEmail('student@muj.manipal.edu')).toBe(true);
+      expect(isAllowedUniversityEmail('aditya.sharma@muj.manipal.edu')).toBe(true);
+      expect(isAllowedUniversityEmail('patent.admin@muj.manipal.edu')).toBe(true);
+      expect(isAllowedUniversityEmail('  TEST.USER@MUJ.MANIPAL.EDU  ')).toBe(true);
+    });
+
+    it('strictly rejects non-@muj.manipal.edu domains', () => {
+      expect(isAllowedUniversityEmail('student@jaipur.manipal.edu')).toBe(false);
+      expect(isAllowedUniversityEmail('student@manipal.edu')).toBe(false);
+      expect(isAllowedUniversityEmail('student@gmail.com')).toBe(false);
+      expect(isAllowedUniversityEmail('student@yahoo.com')).toBe(false);
+      expect(isAllowedUniversityEmail('attacker@muj.manipal.edu.malicious.com')).toBe(false);
+      expect(isAllowedUniversityEmail('')).toBe(false);
+    });
   });
 });

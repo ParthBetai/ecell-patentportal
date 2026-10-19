@@ -35,7 +35,7 @@ export const LoginPage: React.FC = () => {
     } else {
       setSuccessNotice('Authentication verified. Redirecting to your dashboard...');
       setTimeout(() => {
-        const destination = email.toLowerCase() === 'patent.admin@jaipur.manipal.edu' ? '/admin/dashboard' : '/dashboard';
+        const destination = email.toLowerCase() === 'patent.admin@muj.manipal.edu' ? '/admin/dashboard' : '/dashboard';
         navigate(destination);
       }, 600);
     }
@@ -51,7 +51,7 @@ export const LoginPage: React.FC = () => {
     if (result.error) {
       setErrorMessage(result.error);
     } else {
-      const destination = targetEmail.toLowerCase() === 'patent.admin@jaipur.manipal.edu' ? '/admin/dashboard' : '/dashboard';
+      const destination = targetEmail.toLowerCase() === 'patent.admin@muj.manipal.edu' ? '/admin/dashboard' : '/dashboard';
       navigate(destination);
     }
   };
@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
                   id="email"
                   type="email"
                   className="form-control"
-                  placeholder="name@jaipur.manipal.edu"
+                  placeholder="name@muj.manipal.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -105,7 +105,7 @@ export const LoginPage: React.FC = () => {
                 />
               </div>
               <p className="form-helper">
-                Accepts official MUJ domains (@jaipur.manipal.edu or @muj.manipal.edu).
+                Accepts official MUJ domain (@muj.manipal.edu only).
               </p>
             </div>
 
@@ -143,7 +143,7 @@ export const LoginPage: React.FC = () => {
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
                 type="button"
-                onClick={() => handleQuickLogin('aditya.sharma@jaipur.manipal.edu')}
+                onClick={() => handleQuickLogin('aditya.sharma@muj.manipal.edu')}
                 className="btn btn-outline btn-sm"
                 style={{ flex: 1 }}
               >
@@ -151,7 +151,7 @@ export const LoginPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickLogin('patent.admin@jaipur.manipal.edu')}
+                onClick={() => handleQuickLogin('patent.admin@muj.manipal.edu')}
                 className="btn btn-outline btn-sm"
                 style={{ flex: 1, borderColor: 'var(--accent-teal)', color: 'var(--accent-teal)' }}
               >

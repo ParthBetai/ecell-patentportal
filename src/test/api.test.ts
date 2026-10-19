@@ -28,7 +28,7 @@ describe('Data Access Layer & Workflow Logic', () => {
     const inventors = [
       {
         full_name: 'Aditya Sharma',
-        email: 'aditya.sharma@jaipur.manipal.edu',
+        email: 'aditya.sharma@muj.manipal.edu',
         affiliation_type: 'student' as const,
         department: 'Mechanical Engineering',
         is_primary: true,

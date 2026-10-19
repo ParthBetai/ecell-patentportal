@@ -27,7 +27,7 @@ The portal replaces manual email attachments to the university patent coordinato
 
 ## 1. Project Overview & Key Capabilities
 
-- **Institutional Identity & Email Verification**: Supports verified university single sign-in (`@jaipur.manipal.edu`, `@muj.manipal.edu`).
+- **Institutional Identity & Email Verification**: Supports verified university single sign-in (exclusively `@muj.manipal.edu`).
 - **Structured Multi-Step Disclosure Form**: 8-section form capturing applicant details, co-inventors, problem statement, technical description, novelty claims, and practical utility.
 - **Draft Autosave & Incomplete Progress**: Students can save draft disclosures at any stage without mandatory validation blocking.
 - **Private Document Management**: Complete specifications (PDF/DOCX), technical drawings (PDF/PNG), and guide NOCs are stored in private storage with short-lived (15-minute) signed access URLs.
@@ -155,8 +155,8 @@ The portal will open at `http://localhost:5173`.
 
 ### Interactive Test Personas
 The application includes a built-in top notification bar with instant persona switching for testing:
-- **Student View**: Operates as applicant `Aditya Sharma` (`aditya.sharma@jaipur.manipal.edu`).
-- **Admin View**: Operates as coordinator `Patent Coordinator` (`patent.admin@jaipur.manipal.edu`).
+- **Student View**: Operates as applicant `Aditya Sharma` (`aditya.sharma@muj.manipal.edu`).
+- **Admin View**: Operates as coordinator `Patent Coordinator` (`patent.admin@muj.manipal.edu`).
 
 ---
 
@@ -182,14 +182,14 @@ All database tables, enums, triggers, and Row Level Security policies are locate
 ## 7. Authentication & Admin Role Provisioning
 
 ### Student Authentication
-- Students sign in with their university email address (`@jaipur.manipal.edu` or `@muj.manipal.edu`).
+- Students sign in with their university email address (strictly `@muj.manipal.edu`).
 - On initial sign-in via Supabase Auth, the database trigger `on_auth_user_created` creates a corresponding record in `profiles` with default role `student`.
 
 ### Patent Coordinator (Admin) Provisioning
 To assign administrator status to the patent coordinator:
 1. In the Supabase SQL Editor, execute the secure database function:
 ```sql
-SELECT provision_admin_account('patent.admin@jaipur.manipal.edu');
+SELECT provision_admin_account('patent.admin@muj.manipal.edu');
 ```
 2. This assigns `role = 'admin'` to the coordinator's profile.
 3. Because role assignments are protected by database triggers and security definer functions, students cannot grant themselves admin rights.
@@ -242,13 +242,13 @@ The compiled production bundle is generated in `dist/`.
 1. Deploy the `dist/` directory to your university hosting platform (e.g. Vercel, Netlify, Cloudflare Pages, or institutional Nginx server).
 2. Configure single-page application fallback routing so that all paths redirect to `index.html`.
 
-### Custom Domain Configuration (e.g. `patents.jaipur.manipal.edu`):
+### Custom Domain Configuration (e.g. `patents.muj.manipal.edu`):
 1. In your university DNS management console, create a CNAME record:
    - **Host / Name**: `patents` (or `ipr`)
    - **Value / Target**: The CNAME provided by your hosting provider.
 2. In Supabase Dashboard:
    - Navigate to **Authentication > URL Configuration**.
-   - Add `https://patents.jaipur.manipal.edu` to **Site URL** and **Redirect URLs**.
+   - Add `https://patents.muj.manipal.edu` to **Site URL** and **Redirect URLs**.
 3. SSL certificate will automatically provision over HTTPS.
 
 ---
@@ -256,10 +256,10 @@ The compiled production bundle is generated in `dist/`.
 ## 11. Privacy Policy Review Checklist
 
 Before opening the portal to students, the MUJ Legal & Registrar team should review institutional privacy guidelines:
-- [ ] Confirm official institutional email address for patent queries (`patent.admin@jaipur.manipal.edu`).
+- [ ] Confirm official institutional email address for patent queries (`patent.admin@muj.manipal.edu`).
 - [ ] Validate data retention schedule for approved disclosures (recommended: 7 years).
 - [ ] Confirm retention and cleanup policy for abandoned drafts (recommended: 12 months).
-- [ ] Verify escalation contact address for data protection queries (`registrar@jaipur.manipal.edu`).
+- [ ] Verify escalation contact address for data protection queries (`registrar@muj.manipal.edu`).
 
 ---
 
@@ -280,8 +280,8 @@ Before opening the portal to students, the MUJ Legal & Registrar team should rev
 2. **Execute Initial Migration**:
    - Run `supabase/migrations/001_initial_schema.sql` in the Supabase SQL editor.
 3. **Provision Patent Coordinator Account**:
-   - Run `SELECT provision_admin_account('patent.admin@jaipur.manipal.edu');`.
+   - Run `SELECT provision_admin_account('patent.admin@muj.manipal.edu');`.
 4. **Institutional Single Sign-On (SSO)**:
    - (Optional) Configure Microsoft Entra ID or Google Workspace SSO in Supabase Auth to enable one-click MUJ student authentication.
 5. **DNS & Custom Domain**:
-   - Bind `patents.jaipur.manipal.edu` and verify SSL certificate.
+   - Bind `patents.muj.manipal.edu` and verify SSL certificate.

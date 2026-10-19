@@ -30,7 +30,7 @@ describe('Application Workflow & Correction Lifecycle Verification', () => {
       [
         {
           full_name: 'Aditya Sharma',
-          email: 'aditya.sharma@jaipur.manipal.edu',
+          email: 'aditya.sharma@muj.manipal.edu',
           affiliation_type: 'student',
           department: 'CSE',
           is_primary: true,

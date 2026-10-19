@@ -5,7 +5,7 @@ describe('Patent Application Form Schema Validation', () => {
   it('validates a complete, correct application form payload', () => {
     const validData = {
       applicant_name: 'Aditya Sharma',
-      applicant_email: 'aditya.sharma@jaipur.manipal.edu',
+      applicant_email: 'aditya.sharma@muj.manipal.edu',
       applicant_department: 'Computer Science and Engineering',
       applicant_registration_number: '219301045',
       applicant_phone: '9876543210',
@@ -22,7 +22,7 @@ describe('Patent Application Form Schema Validation', () => {
       inventors: [
         {
           full_name: 'Aditya Sharma',
-          email: 'aditya.sharma@jaipur.manipal.edu',
+          email: 'aditya.sharma@muj.manipal.edu',
           phone: '9876543210',
           affiliation_type: 'student',
           department: 'Computer Science and Engineering',
@@ -65,7 +65,7 @@ describe('Patent Application Form Schema Validation', () => {
   it('validates inventor schema requirements', () => {
     const validInventor = {
       full_name: 'Dr. Anita Joshi',
-      email: 'anita.joshi@jaipur.manipal.edu',
+      email: 'anita.joshi@muj.manipal.edu',
       phone: '9876501234',
       affiliation_type: 'faculty',
       department: 'Electrical Engineering',

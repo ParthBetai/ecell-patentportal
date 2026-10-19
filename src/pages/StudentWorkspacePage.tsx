@@ -106,7 +106,7 @@ export const StudentWorkspacePage: React.FC = () => {
     setInventors([
       {
         full_name: currentUser?.full_name || 'Aditya Sharma',
-        email: currentUser?.university_email || 'aditya.sharma@jaipur.manipal.edu',
+        email: currentUser?.university_email || 'aditya.sharma@muj.manipal.edu',
         phone: '+91 9876543210',
         affiliation_type: 'student',
         department: 'Computer Science and Engineering',
@@ -114,7 +114,7 @@ export const StudentWorkspacePage: React.FC = () => {
       },
       {
         full_name: 'Dr. Anita Joshi',
-        email: 'anita.joshi@jaipur.manipal.edu',
+        email: 'anita.joshi@muj.manipal.edu',
         phone: '+91 9876501234',
         affiliation_type: 'faculty',
         department: 'Electrical Engineering',

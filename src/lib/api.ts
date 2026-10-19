@@ -36,7 +36,7 @@ function initLocalStorageIfNeeded() {
   if (!initialized) {
     const adminUser: Profile = {
       id: 'admin-coordinator-uuid',
-      university_email: 'patent.admin@jaipur.manipal.edu',
+      university_email: 'patent.admin@muj.manipal.edu',
       full_name: 'Patent Coordinator',
       role: 'admin',
       department: 'Office of Dean Research / IPR Cell',
@@ -48,7 +48,7 @@ function initLocalStorageIfNeeded() {
 
     const sampleStudent: Profile = {
       id: 'student-aditya-uuid',
-      university_email: 'aditya.sharma@jaipur.manipal.edu',
+      university_email: 'aditya.sharma@muj.manipal.edu',
       full_name: 'Aditya Sharma',
       role: 'student',
       department: 'Computer Science and Engineering',
@@ -88,7 +88,7 @@ function initLocalStorageIfNeeded() {
         id: 'inv-seed-001',
         application_id: sampleApp.id,
         full_name: 'Aditya Sharma',
-        email: 'aditya.sharma@jaipur.manipal.edu',
+        email: 'aditya.sharma@muj.manipal.edu',
         phone: '+91 9876543210',
         affiliation_type: 'student',
         department: 'Computer Science and Engineering',
@@ -100,7 +100,7 @@ function initLocalStorageIfNeeded() {
         id: 'inv-seed-002',
         application_id: sampleApp.id,
         full_name: 'Dr. Anita Joshi',
-        email: 'anita.joshi@jaipur.manipal.edu',
+        email: 'anita.joshi@muj.manipal.edu',
         phone: '+91 9876501234',
         affiliation_type: 'faculty',
         department: 'Electrical Engineering',
@@ -249,7 +249,7 @@ export async function upsertProfile(profile: Partial<Profile> & { id: string; un
     profiles[index] = updatedProfile;
   } else {
     // Determine default role: if matches designated admin email, grant admin
-    const isAdminEmail = profile.university_email.toLowerCase() === 'patent.admin@jaipur.manipal.edu';
+    const isAdminEmail = profile.university_email.toLowerCase() === 'patent.admin@muj.manipal.edu';
     updatedProfile = {
       id: profile.id,
       university_email: profile.university_email,

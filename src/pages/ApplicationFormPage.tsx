@@ -403,7 +403,7 @@ export const ApplicationFormPage: React.FC = () => {
                   className={`form-control ${formErrors.applicant_email ? 'has-error' : ''}`}
                   value={applicantEmail}
                   onChange={(e) => setApplicantEmail(e.target.value)}
-                  placeholder="aditya.sharma@jaipur.manipal.edu"
+                  placeholder="aditya.sharma@muj.manipal.edu"
                 />
                 {formErrors.applicant_email && <div className="form-error">{formErrors.applicant_email}</div>}
               </div>
@@ -525,7 +525,7 @@ export const ApplicationFormPage: React.FC = () => {
                       className="form-control"
                       value={inv.email || ''}
                       onChange={(e) => updateInventor(idx, 'email', e.target.value)}
-                      placeholder="email@jaipur.manipal.edu"
+                      placeholder="email@muj.manipal.edu"
                     />
                   </div>
                 </div>

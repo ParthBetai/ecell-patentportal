@@ -174,7 +174,7 @@ export const RootLayout: React.FC = () => {
             </div>
             <div className="footer-links">
               <a
-                href="mailto:patent.admin@jaipur.manipal.edu"
+                href="mailto:patent.admin@muj.manipal.edu"
                 style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}
               >
                 Patent Cell Contact
