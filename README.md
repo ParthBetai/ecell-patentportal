@@ -19,9 +19,6 @@ The portal replaces manual email attachments to the university patent coordinato
 8. [Private Document Storage & Security](#8-private-document-storage--security)
 9. [Automated Testing & Security Verification](#9-automated-testing--security-verification)
 10. [Production Deployment & Custom Domain Setup](#10-production-deployment--custom-domain-setup)
-11. [Privacy Policy Review Checklist](#11-privacy-policy-review-checklist)
-12. [Security Review Checklist](#12-security-review-checklist)
-13. [Remaining University Configuration Steps](#13-remaining-university-configuration-steps)
 
 ---
 
@@ -253,35 +250,3 @@ The compiled production bundle is generated in `dist/`.
 
 ---
 
-## 11. Privacy Policy Review Checklist
-
-Before opening the portal to students, the MUJ Legal & Registrar team should review institutional privacy guidelines:
-- [ ] Confirm official institutional email address for patent queries (`patent.admin@muj.manipal.edu`).
-- [ ] Validate data retention schedule for approved disclosures (recommended: 7 years).
-- [ ] Confirm retention and cleanup policy for abandoned drafts (recommended: 12 months).
-- [ ] Verify escalation contact address for data protection queries (`registrar@muj.manipal.edu`).
-
----
-
-## 12. Security Review Checklist
-
-- [ ] Confirm that `VITE_SUPABASE_ANON_KEY` is the only client-exposed credential. Never commit the `service_role` secret to frontend code or GitHub.
-- [ ] Ensure that `patent-documents` storage bucket is set to `public = false`.
-- [ ] Verify that the coordinator account is provisioned with `role = 'admin'`.
-- [ ] Check that Row Level Security (RLS) is enabled on all tables in production.
-- [ ] Verify that production domain redirect URLs are locked in Supabase Auth settings.
-
----
-
-## 13. Remaining University Configuration Steps
-
-1. **Connect Live Supabase Instance**:
-   - Replace placeholder credentials in `.env` with actual values from your project dashboard (`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`).
-2. **Execute Initial Migration**:
-   - Run `supabase/migrations/001_initial_schema.sql` in the Supabase SQL editor.
-3. **Provision Patent Coordinator Account**:
-   - Run `SELECT provision_admin_account('patent.admin@muj.manipal.edu');`.
-4. **Institutional Single Sign-On (SSO)**:
-   - (Optional) Configure Microsoft Entra ID or Google Workspace SSO in Supabase Auth to enable one-click MUJ student authentication.
-5. **DNS & Custom Domain**:
-   - Bind `patents.muj.manipal.edu` and verify SSL certificate.
