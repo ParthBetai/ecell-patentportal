@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import {
   fetchApplicationById,
-  getDocumentSignedUrl,
+  downloadSecureDocument,
   addApplicationComment,
   fetchApplicationComments,
 } from '../lib/api';
@@ -14,7 +14,9 @@ import {
   Download,
   AlertTriangle,
   ShieldCheck,
+  GitCompare,
 } from 'lucide-react';
+import { VersionDiffViewer } from '../components/VersionDiffViewer';
 
 export const ApplicationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +28,7 @@ export const ApplicationDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPostingComment, setIsPostingComment] = useState<boolean>(false);
+  const [showDiffViewer, setShowDiffViewer] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadData() {
@@ -50,17 +53,9 @@ export const ApplicationDetailPage: React.FC = () => {
 
   const handleDownloadDocument = async (docPath: string, filename: string) => {
     try {
-      const signedUrl = await getDocumentSignedUrl(docPath);
-      // Initiate download
-      const link = document.createElement('a');
-      link.href = signedUrl;
-      link.download = filename;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      alert('Unable to generate secure download link.');
+      await downloadSecureDocument(docPath, filename);
+    } catch {
+      alert('Unable to download secure document.');
     }
   };
 
@@ -148,7 +143,24 @@ export const ApplicationDetailPage: React.FC = () => {
         </div>
 
         {/* State-specific Actions */}
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {((application.application_versions && application.application_versions.length > 0) ||
+            application.current_version > 1) && (
+            <button
+              type="button"
+              onClick={() => setShowDiffViewer(!showDiffViewer)}
+              className="btn btn-outline"
+              style={{
+                borderColor: showDiffViewer ? '#0284c7' : 'var(--border-color)',
+                color: showDiffViewer ? '#0284c7' : 'var(--text-primary)',
+                backgroundColor: showDiffViewer ? '#f0f9ff' : 'transparent',
+              }}
+            >
+              <GitCompare size={15} />
+              {showDiffViewer ? 'Hide Version Diff' : 'Compare Revisions'}
+            </button>
+          )}
+
           {isOwner && application.status === 'draft' && (
             <Link to={`/applications/${application.id}/edit`} className="btn btn-primary">
               Continue Editing Draft
@@ -170,6 +182,15 @@ export const ApplicationDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Version Diff Inspector */}
+      {showDiffViewer && (
+        <VersionDiffViewer
+          application={application}
+          versions={application.application_versions}
+          onClose={() => setShowDiffViewer(false)}
+        />
+      )}
 
       {/* Active Correction Requests Banner */}
       {application.status === 'corrections_required' && (
